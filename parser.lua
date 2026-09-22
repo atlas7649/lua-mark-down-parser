@@ -2,25 +2,24 @@ local parser = {}
 
 function parser.inline(text)
     local res = text
+
+    -- Hyperlinks: [text](url)
+    -- Lua patterns don't support non-greedy, so we look for the closing bracket/paren
+    while res:match("%[(.-)%]%((.-)%)") do
+        res = res:gsub("%[(.-)%]%((.-)%)", '<a href="%2">%1</a>')
+    end
+
     -- Bold: **text**
-    res = res:gsub("%%(%*%*%s*([^*%s][^*]*[^*%s]%s*%)%*%%)", "<strong>%1</strong>")
-    -- Using a more reliable approach for Lua's pattern matching
-    -- Since Lua patterns don't support non-greedy matches or lookaheads,
-    -- we handle basic markers. 
-    
-    -- Corrected Bold: **text**
-    res = res:gsub("%%(%*%(%*%s*([^*]*)%*%)%*%%", "<strong>%2</strong>")
-    
-    -- Simple Lua-friendly Bold and Italic
-    -- Bold
-    while res:match("%*%*([^*%n]+)%*%*") do
-        res = res:gsub("%*%*([^*%n]+)%*%*", "<strong>%1</strong>")
+    -- Use a pattern that avoids matching internal stars to prevent runaway recursion
+    while res:match("%%*%*([^*%n]+)%%*%*") do
+        res = res:gsub("%%*%*([^*%n]+)%%*%*", "<strong>%1</strong>")
     end
-    -- Italic
-    while res:match("%*([^*%n]+)%*") do
-        res = res:gsub("%*([^*%n]+)%*", "<em>%1</em>")
+
+    -- Italic: *text*
+    while res:match("%%*([^*%n]+)%%*") do
+        res = res:gsub("%%*([^*%n]+)%%*", "<em>%1</em>")
     end
-    
+
     return res
 end
 
