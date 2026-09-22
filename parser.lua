@@ -3,8 +3,24 @@ local parser = {}
 function parser.inline(text)
     local res = text
     -- Bold: **text**
-    -- Lua patterns are limited; we use a simple approach for this version
-    res = res:gsub("%%([^*]*)%%", "<strong>%1</strong>")
+    res = res:gsub("%%(%*%*%s*([^*%s][^*]*[^*%s]%s*%)%*%%)", "<strong>%1</strong>")
+    -- Using a more reliable approach for Lua's pattern matching
+    -- Since Lua patterns don't support non-greedy matches or lookaheads,
+    -- we handle basic markers. 
+    
+    -- Corrected Bold: **text**
+    res = res:gsub("%%(%*%(%*%s*([^*]*)%*%)%*%%", "<strong>%2</strong>")
+    
+    -- Simple Lua-friendly Bold and Italic
+    -- Bold
+    while res:match("%*%*([^*%n]+)%*%*") do
+        res = res:gsub("%*%*([^*%n]+)%*%*", "<strong>%1</strong>")
+    end
+    -- Italic
+    while res:match("%*([^*%n]+)%*") do
+        res = res:gsub("%*([^*%n]+)%*", "<em>%1</em>")
+    end
+    
     return res
 end
 
