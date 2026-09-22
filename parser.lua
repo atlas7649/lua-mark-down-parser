@@ -3,6 +3,11 @@ local parser = {}
 function parser.inline(text)
     local res = text
 
+    -- Inline Code: `code`
+    while res:match("%%`(.-)%%`") do
+        res = res:gsub("%%`(.-)%%`", "<code>%1</code>")
+    end
+
     -- Hyperlinks: [text](url)
     -- Lua patterns don't support non-greedy, so we look for the closing bracket/paren
     while res:match("%[(.-)%]%((.-)%)") do
