@@ -36,11 +36,16 @@ function parser.parse(text)
 
     local html = {}
     local in_list = false
+    local in_quote = false
 
     for i, line in ipairs(lines) do
         local trimmed = line:match("^%s*(.+)%s*$") or ""
         
         if trimmed:match("^-%s*(.+)") then
+            if in_quote then
+                table.insert(html, "</blockquote>")
+                in_quote = false
+            end
             if not in_list then
                 table.insert(html, "<ul>")
                 in_list = true
@@ -48,10 +53,26 @@ function parser.parse(text)
             local content = trimmed:match("^-%s*(.+)")
             table.insert(html, "  <li>" .. parser.inline(content) .. "</li>")
             goto continue
+        elseif trimmed:match("^>%s*(.+)") then
+            if in_list then
+                table.insert(html, "</ul>")
+                in_list = false
+            end
+            if not in_quote then
+                table.insert(html, "<blockquote>")
+                in_quote = true
+            end
+            local content = trimmed:match("^>%s*(.+)")
+            table.insert(html, "  <p>" .. parser.inline(content) .. "</p>")
+            goto continue
         else
             if in_list then
                 table.insert(html, "</ul>")
                 in_list = false
+            end
+            if in_quote then
+                table.insert(html, "</blockquote>")
+                in_quote = false
             end
         end
 
@@ -72,6 +93,9 @@ function parser.parse(text)
 
     if in_list then
         table.insert(html, "</ul>")
+    end
+    if in_quote then
+        table.insert(html, "</blockquote>")
     end
 
     return table.concat(html, "\n")
