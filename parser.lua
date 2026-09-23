@@ -78,6 +78,18 @@ function parser.parse(text)
             local content = trimmed:match("^>%s*(.+)")
             table.insert(html, "  <p>" .. parser.inline(content) .. "</p>")
             goto continue
+        elseif trimmed:match("^---$") then
+            if in_list then
+                table.insert(html, "</" .. list_type .. ">")
+                in_list = false
+                list_type = nil
+            end
+            if in_quote then
+                table.insert(html, "</blockquote>")
+                in_quote = false
+            end
+            table.insert(html, "<hr />")
+            goto continue
         else
             if in_list then
                 table.insert(html, "</" .. list_type .. ">")
