@@ -7,5 +7,6 @@ A simple, lightweight Markdown to HTML converter written in pure Lua.
 - Bold (**)
 - Italic (*)
 - Unordered Lists (-)
+- Ordered Lists (1.)
 - Blockquotes (>)
 - Paragraphs

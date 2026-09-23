@@ -36,27 +36,40 @@ function parser.parse(text)
 
     local html = {}
     local in_list = false
+    local list_type = nil -- 'ul' or 'ol'
     local in_quote = false
 
     for i, line in ipairs(lines) do
         local trimmed = line:match("^%s*(.+)%s*$") or ""
         
-        if trimmed:match("^-%s*(.+)") then
+        local is_ul = trimmed:match("^-%s*(.+)")
+        local is_ol = trimmed:match("^%d+%.%s*(.+)")
+
+        if is_ul or is_ol then
+            local current_type = is_ul and "ul" or "ol"
+            local content = is_ul and trimmed:match("^-%s*(.+)") or trimmed:match("^%d+%.%s*(.+)")
+
             if in_quote then
                 table.insert(html, "</blockquote>")
                 in_quote = false
             end
-            if not in_list then
-                table.insert(html, "<ul>")
+
+            if not in_list or list_type ~= current_type then
+                if in_list then
+                    table.insert(html, "</" .. list_type .. ">")
+                end
+                table.insert(html, "<" .. current_type .. ">")
                 in_list = true
+                list_type = current_type
             end
-            local content = trimmed:match("^-%s*(.+)")
+
             table.insert(html, "  <li>" .. parser.inline(content) .. "</li>")
             goto continue
         elseif trimmed:match("^>%s*(.+)") then
             if in_list then
-                table.insert(html, "</ul>")
+                table.insert(html, "</" .. list_type .. ">")
                 in_list = false
+                list_type = nil
             end
             if not in_quote then
                 table.insert(html, "<blockquote>")
@@ -67,8 +80,9 @@ function parser.parse(text)
             goto continue
         else
             if in_list then
-                table.insert(html, "</ul>")
+                table.insert(html, "</" .. list_type .. ">")
                 in_list = false
+                list_type = nil
             end
             if in_quote then
                 table.insert(html, "</blockquote>")
@@ -92,7 +106,7 @@ function parser.parse(text)
     end
 
     if in_list then
-        table.insert(html, "</ul>")
+        table.insert(html, "</" .. list_type .. ">")
     end
     if in_quote then
         table.insert(html, "</blockquote>")
