@@ -23,13 +23,13 @@ function parser.inline(text)
     end
 
     -- Inline Code: `code`
-    while res:match("%%`(.-)%%`") do
-        res = res:gsub("%%`(.-)%%`", "<code>%1</code>")
+    while res:match("`(.-)`") do
+        res = res:gsub("`(.-)`", "<code>%1</code>")
     end
 
     -- Images: ![alt](url)
-    while res:match("%%!%[(.-)%]%((.-)%") do
-        res = res:gsub("%%!%[(.-)%]%((.-)%")", '<img src="%2" alt="%1">')
+    while res:match("!%[(.-)%]%((.-)%") do
+        res = res:gsub("!%[(.-)%]%((.-)%")", '<img src="%2" alt="%1">')
     end
 
     -- Hyperlinks: [text](url)
@@ -38,18 +38,18 @@ function parser.inline(text)
     end
 
     -- Strike-through: ~~text~~
-    while res:match("%%~%~([^%n~]+)%%~%~") do
-        res = res:gsub("%%~%~([^%n~]+)%%~%~", "<del>%1</del>")
+    while res:match("%~%~([^%n~]+)%~%~") do
+        res = res:gsub("%~%~([^%n~]+)%~%~", "<del>%1</del>")
     end
 
     -- Bold: **text**
-    while res:match("%%*%*([^*%n]+)%%*%*") do
-        res = res:gsub("%%*%*([^*%n]+)%%*%*", "<strong>%1</strong>")
+    while res:match("%*%*([^*%n]+)%*%*") do
+        res = res:gsub("%*%*([^*%n]+)%*%*", "<strong>%1</strong>")
     end
 
     -- Italic: *text*
-    while res:match("%%*([^*%n]+)%%*") do
-        res = res:gsub("%%*([^*%n]+)%%*", "<em>%1</em>")
+    while res:match("%*([^*%n]+)%*") do
+        res = res:gsub("%*([^*%n]+)%*", "<em>%1</em>")
     end
 
     -- Restore escaped characters
