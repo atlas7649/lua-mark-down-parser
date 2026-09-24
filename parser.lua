@@ -14,6 +14,11 @@ function parser.inline(text)
         res = res:gsub("%[(.-)%]%((.-)%)", '<a href="%2">%1</a>')
     end
 
+    -- Strike-through: ~~text~~
+    while res:match("%%~%~([^%n~]+)%%~%~") do
+        res = res:gsub("%%~%~([^%n~]+)%%~%~", "<del>%1</del>")
+    end
+
     -- Bold: **text**
     -- Use a pattern that avoids matching internal stars to prevent runaway recursion
     while res:match("%%*%*([^*%n]+)%%*%*") do
