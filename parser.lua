@@ -3,6 +3,25 @@ local parser = {}
 function parser.inline(text)
     local res = text
 
+    -- Handle escaping: \* -> *, \` -> `, etc.
+    -- We temporarily replace escaped characters with placeholders
+    local escapes = {}
+    local i = 1
+    while i <= #res do
+        if res:sub(i, i) == "\" then
+            local char = res:sub(i+1, i+1)
+            if char ~= "" then
+                local placeholder = "__ESC" .. #escapes .. "__"
+                escapes[#escapes + 1] = char
+                res = res:sub(1, i-1) .. placeholder .. res:sub(i+2)
+                i = i + #placeholder
+                goto continue
+            end
+        end
+        i = i + 1
+        ::continue::
+    end
+
     -- Inline Code: `code`
     while res:match("%%`(.-)%%`") do
         res = res:gsub("%%`(.-)%%`", "<code>%1</code>")
@@ -14,8 +33,7 @@ function parser.inline(text)
     end
 
     -- Hyperlinks: [text](url)
-    -- Lua patterns don't support non-greedy, so we look for the closing bracket/paren
-    while res:match("%[(.-)%]%((.-)%)") do
+    while res:match("%[(.-)%]%((.-)%") do
         res = res:gsub("%[(.-)%]%((.-)%")", '<a href="%2">%1</a>')
     end
 
@@ -25,7 +43,6 @@ function parser.inline(text)
     end
 
     -- Bold: **text**
-    -- Use a pattern that avoids matching internal stars to prevent runaway recursion
     while res:match("%%*%*([^*%n]+)%%*%*") do
         res = res:gsub("%%*%*([^*%n]+)%%*%*", "<strong>%1</strong>")
     end
@@ -33,6 +50,11 @@ function parser.inline(text)
     -- Italic: *text*
     while res:match("%%*([^*%n]+)%%*") do
         res = res:gsub("%%*([^*%n]+)%%*", "<em>%1</em>")
+    end
+
+    -- Restore escaped characters
+    for idx, char in ipairs(escapes) do
+        res = res:gsub("__ESC" .. (idx-1) .. "__", char)
     end
 
     return res
