@@ -8,10 +8,15 @@ function parser.inline(text)
         res = res:gsub("%%`(.-)%%`", "<code>%1</code>")
     end
 
+    -- Images: ![alt](url)
+    while res:match("%%!%[(.-)%]%((.-)%") do
+        res = res:gsub("%%!%[(.-)%]%((.-)%")", '<img src="%2" alt="%1">')
+    end
+
     -- Hyperlinks: [text](url)
     -- Lua patterns don't support non-greedy, so we look for the closing bracket/paren
     while res:match("%[(.-)%]%((.-)%)") do
-        res = res:gsub("%[(.-)%]%((.-)%)", '<a href="%2">%1</a>')
+        res = res:gsub("%[(.-)%]%((.-)%")", '<a href="%2">%1</a>')
     end
 
     -- Strike-through: ~~text~~
