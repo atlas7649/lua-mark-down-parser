@@ -70,8 +70,35 @@ function parser.parse(text)
     local in_list = false
     local list_type = nil -- 'ul' or 'ol'
     local in_quote = false
+    local in_code_block = false
 
     for i, line in ipairs(lines) do
+        -- Indented Code Block: 4 spaces or 1 tab
+        if line:match("^    ") or line:match("^\t") then
+            if not in_code_block then
+                if in_list then
+                    table.insert(html, "</" .. list_type .. ">")
+                    in_list = false
+                    list_type = nil
+                end
+                if in_quote then
+                    table.insert(html, "</blockquote>")
+                    in_quote = false
+                end
+                table.insert(html, "<pre><code>")
+                in_code_block = true
+            end
+            local content = line:sub(5)
+            if line:match("^\t") then content = line:sub(2) end
+            table.insert(html, content)
+            goto continue
+        else
+            if in_code_block then
+                table.insert(html, "</code></pre>")
+                in_code_block = false
+            end
+        end
+
         local trimmed = line:match("^%s*(.+)%s*$") or ""
         
         local is_ul = trimmed:match("^-%s*(.+)")
@@ -149,6 +176,9 @@ function parser.parse(text)
         ::continue::
     end
 
+    if in_code_block then
+        table.insert(html, "</code></pre>")
+    end
     if in_list then
         table.insert(html, "</" .. list_type .. ">")
     end
