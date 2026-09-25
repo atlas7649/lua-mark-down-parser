@@ -130,10 +130,10 @@ function parser.parse(text)
         end
 
         -- Headers
-        local h_level = line:match("^(#+)(.-)$")
-        if h_level then
+        local hashes = line:match("^(#+)")
+        if hashes then
             close_blocks()
-            local level = #h_level
+            local level = #hashes
             local text = line:sub(level + 2)
             table.insert(html, string.format("<h%d>%s</h%d>", level, parser.inline(text), level))
             goto continue
