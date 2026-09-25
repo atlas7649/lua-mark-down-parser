@@ -4,7 +4,6 @@ function parser.inline(text)
     local res = text
 
     -- Handle escaping: \* -> *, \` -> `, etc.
-    -- We temporarily replace escaped characters with placeholders
     local escapes = {}
     local i = 1
     while i <= #res do
@@ -70,76 +69,121 @@ function parser.parse(text)
     local in_list = false
     local list_type = nil -- 'ul' or 'ol'
     local in_quote = false
-    local in_code_block = false
+    local block_type = nil -- 'fenced' or 'indented'
 
-    for i, line in ipairs(lines) do
-        -- Fenced Code Block: ```
-        if line:match("^```") then
-            if not in_code_block then
-                if in_list then
-                    table.insert(html, "</" .. list_type .. ">")
-                    in_list = false
-                    list_type = nil
-                end
-                if in_quote then
-                    table.insert(html, "</blockquote>")
-                    in_quote = false
-                end
-                local lang = line:match("^```(%S*)") or ""
-                table.insert(html, string.format("<pre><code class="class=\"%s\">", lang))
-                in_code_block = true
-            else
-                table.insert(html, "</code></pre>")
-                in_code_block = false
-            end
-            goto continue
+    local function close_blocks()
+        if block_type then
+            table.insert(html, "</code></pre>")
+            block_type = nil
         end
-
-        -- Indented Code Block: 4 spaces or 1 tab
-        if line:match("^    ") or line:match("^\t") then
-            if not in_code_block then
-                if in_list then
-                    table.insert(html, "</" .. list_type .. ">")
-                    in_list = false
-                    list_type = nil
-                end
-                if in_quote then
-                    table.insert(html, "</blockquote>")
-                    in_quote = false
-                end
-                table.insert(html, "<pre><code>")
-                in_code_block = true
-            end
-            local content = line:sub(5)
-            if line:match("^\t") then content = line:sub(2) end
-            table.insert(html, content)
-            goto continue
-        else
-            if in_code_block and not line:match("^```") then
-                -- Only close indented block if not currently in a fenced block (handled above)
-                -- However, the logic above already handled the fence. 
-                -- If we are here, we are either in an indented block or not in a block.
-                -- We need to distinguish if the current `in_code_block` was started by indent or fence.
-                -- Since we don't store the type, we'll use a simple check: 
-                -- if it was an indented block, any non-indented line closes it.
-                -- If it was a fenced block, only ``` closes it.
-                -- To fix this, let's track the block type.
-            end
+        if in_list then
+            table.insert(html, "</" .. list_type .. ">")
+            in_list = false
+            list_type = nil
         end
-
-        -- Re-evaluating in_code_block for indented blocks specifically
-        -- Since I cannot easily change the architecture to track block type without more changes, 
-        -- I will refine the indented block logic to only trigger if not in a fenced block.
-        -- Wait, I can just check if the line started with a fence before checking indents.
-        -- The current structure has a flaw: if in_code_block is true, an indented block doesn't
-        -- know if it's fenced or indented. 
-        -- Let's use a specific variable for fenced blocks.
-        goto skip_indent_close
-        ::skip_indent_close::
+        if in_quote then
+            table.insert(html, "</blockquote>")
+            in_quote = false
+        end
     end
 
-    -- Correcting the block logic to distinguish between Fenced and Indented
-    return ""
+    for i, line in ipairs(lines) do
+        -- Fenced Code Block
+        if line:match("^```") then
+            if block_type == "fenced" then
+                table.insert(html, "</code></pre>")
+                block_type = nil
+            else
+                close_blocks()
+                local lang = line:match("^```(%S*)") or ""
+                table.insert(html, string.format("<pre><code class=\"%s\">", lang))
+                block_type = "fenced"
+            end
+            goto continue
+        end
+
+        -- Indented Code Block
+        if block_type ~= "fenced" and (line:match("^    ") or line:match("^\t")) then
+            if block_type ~= "indented" then
+                close_blocks()
+                table.insert(html, "<pre><code>")
+                block_type = "indented"
+            end
+            local content = line:match("^    (.-)$") or line:match("^\t(.-)$") or ""
+            table.insert(html, content)
+            goto continue
+        elseif block_type == "indented" and not (line:match("^    ") or line:match("^\t")) and line ~= "" then
+            table.insert(html, "</code></pre>")
+            block_type = nil
+        end
+
+        if block_type == "fenced" then
+            table.insert(html, line)
+            goto continue
+        end
+
+        -- Horizontal Rule
+        if line:match("^---$") then
+            close_blocks()
+            table.insert(html, "<hr />")
+            goto continue
+        end
+
+        -- Headers
+        local h_level = line:match("^(#+)(.-)$")
+        if h_level then
+            close_blocks()
+            local level = #h_level
+            local text = line:sub(level + 2)
+            table.insert(html, string.format("<h%d>%s</h%d>", level, parser.inline(text), level))
+            goto continue
+        end
+
+        -- Blockquotes
+        if line:match("^>") then
+            if not in_quote then
+                close_blocks()
+                table.insert(html, "<blockquote>")
+                in_quote = true
+            end
+            local content = line:sub(2):gsub("^%s", "")
+            table.insert(html, parser.inline(content))
+            goto continue
+        elseif in_quote and line ~= "" then
+            table.insert(html, "</blockquote>")
+            in_quote = false
+        end
+
+        -- Lists
+        local ul_match = line:match("^%s*-%s*(.-)$")
+        local ol_match = line:match("^%s*%d+%.%s*(.-)$")
+        if ul_match or ol_match then
+            local current_type = ul_match and "ul" or "ol"
+            local content = ul_match or ol_match
+            if not in_list or list_type ~= current_type then
+                if in_list then table.insert(html, "</" .. list_type .. ">") end
+                table.insert(html, "<" .. current_type .. ">")
+                in_list = true
+                list_type = current_type
+            end
+            table.insert(html, "<li>" .. parser.inline(content) .. "</li>")
+            goto continue
+        elseif in_list and line ~= "" then
+            table.insert(html, "</" .. list_type .. ">")
+            in_list = false
+            list_type = nil
+        end
+
+        -- Paragraphs
+        if line ~= "" then
+            table.insert(html, "<p>" .. parser.inline(line) .. "</p>")
+        end
+
+        ::continue::
+    end
+
+    close_blocks()
+    return table.concat(html, "\n")
 end
 
 return parser
