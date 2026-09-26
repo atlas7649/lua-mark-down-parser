@@ -41,6 +41,11 @@ function parser.inline(text)
         res = res:gsub("%~%~([^%n~]+)%~%~", "<del>%1</del>")
     end
 
+    -- Bold-Italic: ***text***
+    while res:match("%*%*%*([^*%n]+)%*%*%*") do
+        res = res:gsub("%*%*%*([^*%n]+)%*%*%*", "<strong><em>%1</em></strong>")
+    end
+
     -- Bold: **text**
     while res:match("%*%*([^*%n]+)%*%*") do
         res = res:gsub("%*%*([^*%n]+)%*%*", "<strong>%1</strong>")
