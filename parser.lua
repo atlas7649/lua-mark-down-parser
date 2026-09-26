@@ -44,7 +44,7 @@ function parser.inline(text)
 
     -- Restore escaped characters
     for idx, char in ipairs(escapes) do
-        res = res:gsub("__ESC" .. (idx-1) .. "__", char)
+        res = res:gsub("__ESC" .. idx .. "__", char)
     end
 
     return res
