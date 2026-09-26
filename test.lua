@@ -2,13 +2,15 @@ local parser = require("parser")
 
 local md = "# Hello World\n\nThis is a test of the parser with **bold**, *italic*, ~~strike~~, and `inline code`. You can also use [a link](https://lua.org) and an image ![Lua Logo](https://lua.org/logo.png).\n\n---\n
 - Item 1 with **bold**\n- Item 2 with `code` in list\n\n1. First ordered item\n2. Second ordered item\n\n---\n
-> This is a blockquote\n> With multiple lines\n\n## Subheader\nAnother paragraph.\n\n### Escaping Test\nThis is a literal asterisk: \* and literal backtick: \` and literal tilde: \~.\n\n#### Code Block Test\n    local x = 10\n    print(x)\n\n##### Fenced Code Block\n```lua\nprint(\"Hello Fenced\")\n```\n\nBack to normal text."
+> This is a blockquote\n> With multiple lines\n\n## Subheader\nAnother paragraph.\n\n### Escaping Test\nThis is a literal asterisk: \* and literal backtick: \` and literal tilde: \~.\n\n#### Code Block Test\n    local x = 10\n    print(x)\n\n##### Fenced Code Block\n```lua\nprint(\"Hello Fenced\")\n```\n\nBack to normal text.\n\nSetext H1\n=======
+
+Setext H2
+-------"
 
 local html = parser.parse(md)
 print("Markdown:\n" .. md)
 print("\nHTML:\n" .. html)
 
--- Basic verification
 local success = true
 if not html:find("<h1>Hello World</h1>") then success = false end
 if not html:find("<ul>") then success = false end
@@ -24,7 +26,7 @@ if not html:find("</blockquote>") then success = false end
 if not html:find("<hr />") then success = false end
 
 -- Escaping verification
-if html:find("<em>\*</em>") or html:find("<em>\*</em>") then success = false end
+if html:find("<em>\*</em>") then success = false end
 if not html:find("literal asterisk: \*") then success = false end
 if not html:find("literal backtick: `") then success = false end
 if not html:find("literal tilde: ~") then success = false end
@@ -37,6 +39,10 @@ if not html:find("</code></pre>") then success = false end
 -- Fenced code block verification
 if not html:find('<pre><code class="lua">') then success = false end
 if not html:find("print(\"Hello Fenced\")") then success = false end
+
+-- Setext verification
+if not html:find("<h1>Setext H1</h1>") then success = false end
+if not html:find("<h2>Setext H2</h2>") then success = false end
 
 if success then
     print("\nTest Passed!")

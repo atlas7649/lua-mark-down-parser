@@ -43,8 +43,9 @@ function parser.inline(text)
     res = res:gsub("%*([^*%n]+)%*", "<em>%1</em>")
 
     -- Restore escaped characters
-    for idx, char in ipairs(escapes) do
-        res = res:gsub("__ESC" .. idx .. "__", char)
+    for idx = #escapes, 1, -1 do
+        local placeholder = "__ESC" .. idx .. "__"
+        res = res:gsub(placeholder, escapes[idx])
     end
 
     return res
@@ -61,6 +62,7 @@ function parser.parse(text)
     local list_type = nil -- 'ul' or 'ol'
     local in_quote = false
     local block_type = nil -- 'fenced' or 'indented'
+    local skip_next = false
 
     local function close_blocks()
         if block_type then
@@ -79,6 +81,11 @@ function parser.parse(text)
     end
 
     for i, line in ipairs(lines) do
+        if skip_next then
+            skip_next = false
+            goto continue
+        end
+
         -- Fenced Code Block
         if line:match("^```") then
             if block_type == "fenced" then
@@ -120,7 +127,7 @@ function parser.parse(text)
             goto continue
         end
 
-        -- Headers
+        -- Headers (ATX style)
         local hashes = line:match("^(#+)")
         if hashes then
             close_blocks()
@@ -128,6 +135,22 @@ function parser.parse(text)
             local text = line:sub(level + 2)
             table.insert(html, string.format("<h%d>%s</h%d>", level, parser.inline(text), level))
             goto continue
+        end
+
+        -- Setext-style Headers (Underlined)
+        if i < #lines then
+            local next_line = lines[i+1]
+            if next_line and next_line:match("^={3,}$") then
+                close_blocks()
+                table.insert(html, string.format("<h1>%s</h1>", parser.inline(line)))
+                skip_next = true
+                goto continue
+            elseif next_line and next_line:match("^-{3,}$") then
+                close_blocks()
+                table.insert(html, string.format("<h2>%s</h2>", parser.inline(line)))
+                skip_next = true
+                goto continue
+            end
         end
 
         -- Blockquotes
