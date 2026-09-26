@@ -25,10 +25,10 @@ function parser.inline(text)
     res = res:gsub("`(.-)`", "<code>%1</code>")
 
     -- Images: ![alt](url)
-    res = res:gsub("!%[(.-)%]%((.-)%")", '<img src="%2" alt="%1">')
+    res = res:gsub("!%[(.-)%]%((.-)%)", '<img src="%2" alt="%1">')
 
     -- Hyperlinks: [text](url)
-    res = res:gsub("%[(.-)%]%((.-)%")", '<a href="%2">%1</a>')
+    res = res:gsub("%[(.-)%]%((.-)%)", '<a href="%2">%1</a>')
 
     -- Strike-through: ~~text~~
     res = res:gsub("%~%~([^%n~]+)%~%~", "<del>%1</del>")
