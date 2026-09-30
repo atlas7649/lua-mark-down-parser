@@ -12,6 +12,7 @@ local function html_escape(text)
 end
 
 function parser.inline(text)
+    if not text then return "" end
     local res = text
 
     -- Handle escaping: \* -> *, \` -> `, \~ -> ~, etc.
