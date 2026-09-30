@@ -1,5 +1,16 @@
 local parser = {}
 
+local function html_escape(text)
+    local replacements = {
+        ["&"] = "&amp;",
+        ["<"] = "&lt;",
+        [">"] = "&gt;",
+        ["\""] = "&quot;",
+        ["'"] = "&#39;",
+    }
+    return (text:gsub("[%&<>\"']", replacements))
+end
+
 function parser.inline(text)
     local res = text
 
@@ -22,13 +33,13 @@ function parser.inline(text)
     end
 
     -- Inline Code: `code`
-    res = res:gsub("`(.-)`", "<code>%1</code>")
+    res = res:gsub("`(.-)`", function(code) return "<code style='white-space: pre;'>" .. html_escape(code) .. "</code>" end)
 
     -- Images: ![alt](url)
-    res = res:gsub("!%[(.-)%]%((.-)%)", '<img src="%2" alt="%1">')
+    res = res:gsub("!%[(.-)%]%((.-)%)", function(alt, url) return string.format('<img src="%s" alt="%s">', html_escape(url), html_escape(alt)) end)
 
     -- Hyperlinks: [text](url)
-    res = res:gsub("%[(.-)%]%((.-)%)", '<a href="%2">%1</a>')
+    res = res:gsub("%[(.-)%]%((.-)%)", function(text, url) return string.format('<a href="%s">%s</a>', html_escape(url), parser.inline(text)) end)
 
     -- Strike-through: ~~text~~
     res = res:gsub("%~%~([^%n~]+)%~%~", "<del>%1</del>")
@@ -94,7 +105,7 @@ function parser.parse(text)
             else
                 close_blocks()
                 local lang = line:match("^```(%S*)") or ""
-                table.insert(html, string.format("<pre><code class=\"%s\">", lang))
+                table.insert(html, string.format("<pre><code class=\"%s\">", html_escape(lang)))
                 block_type = "fenced"
             end
             goto continue
@@ -108,7 +119,7 @@ function parser.parse(text)
                 block_type = "indented"
             end
             local content = line:match("^    (.-)$") or line:match("^\t(.-)$") or ""
-            table.insert(html, content)
+            table.insert(html, html_escape(content))
             goto continue
         elseif block_type == "indented" and not (line:match("^    ") or line:match("^\t")) and line ~= "" then
             table.insert(html, "</code></pre>")
@@ -116,7 +127,7 @@ function parser.parse(text)
         end
 
         if block_type == "fenced" then
-            table.insert(html, line)
+            table.insert(html, html_escape(line))
             goto continue
         end
 

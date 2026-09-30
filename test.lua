@@ -44,6 +44,14 @@ if not html:find("print(\"Hello Fenced\")") then success = false end
 if not html:find("<h1>Setext H1</h1>") then success = false end
 if not html:find("<h2>Setext H2</h2>") then success = false end
 
+-- HTML Entity Test
+local html_entity_md = "Check <this> & that"
+local html_entity_res = parser.parse(html_entity_md)
+if not html_entity_res:find("Check &lt;this&gt; &amp; that") then
+    print("HTML Entity Test Failed!")
+    success = false
+end
+
 if success then
     print("\nTest Passed!")
 else
