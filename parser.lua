@@ -14,7 +14,7 @@ end
 function parser.inline(text)
     local res = text
 
-    -- Handle escaping: \* -> *, \` -> `, etc.
+    -- Handle escaping: \* -> *, \` -> `, \~ -> ~, etc.
     local escapes = {}
     local i = 1
     while i <= #res do
