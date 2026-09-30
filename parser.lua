@@ -201,6 +201,9 @@ function parser.parse(text)
 
         -- Paragraphs
         if line ~= "" then
+            if not in_quote then
+                close_blocks()
+            end
             table.insert(html, "<p>" .. parser.inline(line) .. "</p>")
         end
 
