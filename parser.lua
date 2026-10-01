@@ -187,6 +187,13 @@ function parser.parse(text)
         if ul_match or ol_match then
             local current_type = ul_match and "ul" or "ol"
             local content = ul_match or ol_match
+            
+            -- Handle Task Lists for unordered lists
+            if current_type == "ul" then
+                content = content:gsub("^%s*\[%s*x%s*\]%s*(.-)$", "<input type='checkbox' checked disabled> %1")
+                content = content:gsub("^%s*\[%s* %s*\]%s*(.-)$", "<input type='checkbox' disabled> %1")
+            end
+
             if not in_list or list_type ~= current_type then
                 if in_list then table.insert(html, "</" .. list_type .. ">") end
                 table.insert(html, "<" .. current_type .. ">")

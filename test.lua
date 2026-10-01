@@ -52,6 +52,14 @@ if not html_entity_res:find("Check &lt;this&gt; &amp; that") then
     success = false
 end
 
+-- Task List Test
+local task_md = "- [x] Done\n- [ ] Not Done"
+local task_res = parser.parse(task_md)
+if not task_res:find("checked disabled") or not task_res:find("disabled") then
+    print("Task List Test Failed!")
+    success = false
+end
+
 if success then
     print("\nTest Passed!")
 else
