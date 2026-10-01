@@ -60,6 +60,14 @@ if not task_res:find("checked disabled") or not task_res:find("disabled") then
     success = false
 end
 
+-- Link with inline content test
+local inline_link_md = "Check [**this bold link**](https://lua.org)"
+local inline_link_res = parser.parse(inline_link_md)
+if not inline_link_res:find('<a href="https://lua.org"><strong>this bold link</strong></a>') then
+    print("Inline Link Test Failed!")
+    success = false
+end
+
 if success then
     print("\nTest Passed!")
 else
