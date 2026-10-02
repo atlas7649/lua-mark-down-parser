@@ -165,6 +165,38 @@ function parser.parse(text)
             end
         end
 
+        -- Tables
+        if line:match("^|") then
+            close_blocks()
+            local table_lines = {line}
+            local j = i + 1
+            while j <= #lines and lines[j]:match("^|") do
+                table.insert(table_lines, lines[j])
+                j = j + 1
+            end
+
+            if #table_lines >= 2 then
+                table.insert(html, "<table>")
+                for row_idx, row_text in ipairs(table_lines) do
+                    -- Skip separator row (e.g., |---|---|
+                    if row_idx == 2 and row_text:match("^|[ %-]*|%") then
+                        goto skip_row
+                    end
+                    
+                    local tag = (row_idx == 1) and "th" or "td"
+                    table.insert(html, "<tr>")
+                    for cell in row_text:gmatch("([^|]+)") do
+                        table.insert(html, string.format("<%s>%s</%s>", tag, parser.inline(cell:gsub("^%s*(.-)%s*$", "%1")), tag))
+                    end
+                    table.insert(html, "</tr>")
+                    ::skip_row::
+                end
+                table.insert(html, "</table>")
+                i = j - 1
+                goto continue
+            end
+        end
+
         -- Blockquotes
         if line:match("^>") then
             if not in_quote then

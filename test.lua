@@ -5,7 +5,12 @@ local md = "# Hello World\n\nThis is a test of the parser with **bold**, *italic
 > This is a blockquote\n> With multiple lines\n\n## Subheader\nAnother paragraph.\n\n### Escaping Test\nThis is a literal asterisk: \* and literal backtick: \` and literal tilde: \~.\n\n#### Code Block Test\n    local x = 10\n    print(x)\n\n##### Fenced Code Block\n```lua\nprint(\"Hello Fenced\")\n```\n\nBack to normal text.\n\nSetext H1\n=======
 
 Setext H2
--------"
+-------
+
+| Header 1 | Header 2 |
+|----------|----------|
+| Cell 1   | Cell 2   |
+| Cell 3   | Cell 4   |"
 
 local html = parser.parse(md)
 print("Markdown:\n" .. md)
@@ -43,6 +48,12 @@ if not html:find("print(\"Hello Fenced\")") then success = false end
 -- Setext verification
 if not html:find("<h1>Setext H1</h1>") then success = false end
 if not html:find("<h2>Setext H2</h2>") then success = false end
+
+-- Table verification
+if not html:find("<table>") then success = false end
+if not html:find("<th>Header 1</th>") then success = false end
+if not html:find("<td>Cell 4</td>") then success = false end
+if not html:find("</table>") then success = false end
 
 -- HTML Entity Test
 local html_entity_md = "Check <this> & that"
