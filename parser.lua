@@ -40,7 +40,6 @@ function parser.inline(text)
     res = res:gsub("!%[(.-)%]%((.-)%)", function(alt, url) return string.format('<img src="%s" alt="%s">', html_escape(url), html_escape(alt)) end)
 
     -- Hyperlinks: [text](url)
-    -- Using a slightly more restricted match to avoid eating multiple links in one go
     res = res:gsub("%[(.-)%]%((.-)%)", function(text, url) return string.format('<a href="%s">%s</a>', html_escape(url), parser.inline(text)) end)
 
     -- Strike-through: ~~text~~
