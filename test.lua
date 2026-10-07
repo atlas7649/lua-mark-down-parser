@@ -23,7 +23,7 @@ if not html:find("<ol>") then success = false end
 if not html:find("<strong>bold</strong>") then success = false end
 if not html:find("<em>italic</em>") then success = false end
 if not html:find("<del>strike</del>") then success = false end
-if not html:find("<code>inline code</code>") then success = false end
+if not html:find("<code style='white-space: pre;'>inline code</code>") then success = false end
 if not html:find('<a href="https://lua.org">a link</a>') then success = false end
 if not html:find('<img src="https://lua.org/logo.png" alt="Lua Logo">') then success = false end
 if not html:find("<blockquote>") then success = false end
