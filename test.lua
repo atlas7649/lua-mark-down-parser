@@ -79,6 +79,14 @@ if not inline_link_res:find('<a href="https://lua.org"><strong>this bold link</s
     success = false
 end
 
+-- Regression test for link closing tag
+local link_md = "[test](url)"
+local link_res = parser.parse(link_md)
+if not link_res:find('<a href="url">test</a>') then
+    print("Link closing tag regression test failed!")
+    success = false
+end
+
 if success then
     print("\nTest Passed!")
 else
