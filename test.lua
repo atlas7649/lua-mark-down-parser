@@ -37,7 +37,7 @@ if not html:find("literal backtick: `") then success = false end
 if not html:find("literal tilde: ~") then success = false end
 
 -- Code block verification
-if not html:find("<pre><code>") then success = false end
+if not html:find("<pre><code >") then success = false end
 if not html:find("local x = 10") then success = false end
 if not html:find("</code></pre>") then success = false end
 
