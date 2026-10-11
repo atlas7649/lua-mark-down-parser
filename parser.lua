@@ -185,9 +185,22 @@ function parser.parse(text)
                     
                     local tag = (row_idx == 1) and "th" or "td"
                     table.insert(html, "<tr>")
-                    for cell in row_text:gmatch("([^|]+)") do
-                        table.insert(html, string.format("<%s>%s</%s>", tag, parser.inline(cell:gsub("^%s*(.-)%s*$", "%1")), tag))
+                    
+                    -- Remove leading and trailing pipes
+                    local row = row_text:gsub("^|", ""):gsub("|$", "")
+                    
+                    -- Split by pipe and iterate through cells
+                    local cells = {}
+                    for cell in row:gmatch("([^|]*)|?") do
+                        table.insert(cells, cell)
                     end
+                    
+                    for _, cell in ipairs(cells) do
+                        if cell ~= "" or #cells > 0 then
+                            table.insert(html, string.format("<%s>%s</%s>", tag, parser.inline(cell:gsub("^%s*(.-)%s*$", "%1")), tag))
+                        end
+                    end
+                    
                     table.insert(html, "</tr>")
                     ::skip_row::
                 end
