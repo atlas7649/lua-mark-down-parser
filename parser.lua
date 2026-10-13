@@ -189,16 +189,21 @@ function parser.parse(text)
                     -- Remove leading and trailing pipes
                     local row = row_text:gsub("^|", ""):gsub("|$", "")
                     
-                    -- Split by pipe and iterate through cells
+                    -- Split by pipe manually to handle empty cells
                     local cells = {}
-                    for cell in row:gmatch("([^|]*)|?") do
-                        table.insert(cells, cell)
+                    local current = ""
+                    for char in row:gmatch(".") do
+                        if char == "|" then
+                            table.insert(cells, current)
+                            current = ""
+                        else
+                            current = current .. char
+                        end
                     end
+                    table.insert(cells, current)
                     
                     for _, cell in ipairs(cells) do
-                        if cell ~= "" or #cells > 0 then
-                            table.insert(html, string.format("<%s>%s</%s>", tag, parser.inline(cell:gsub("^%s*(.-)%s*$", "%1")), tag))
-                        end
+                        table.insert(html, string.format("<%s>%s</%s>", tag, parser.inline(cell:gsub("^%s*(.-)%s*$", "%1")), tag))
                     end
                     
                     table.insert(html, "</tr>")
