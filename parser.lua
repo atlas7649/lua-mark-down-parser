@@ -116,7 +116,7 @@ function parser.parse(text)
         if block_type ~= "fenced" and (line:match("^    ") or line:match("^\t")) then
             if block_type ~= "indented" then
                 close_blocks()
-                table.insert(html, "<pre><code>")
+                table.insert(html, "<pre><code >")
                 block_type = "indented"
             end
             local content = line:match("^    (.-)$") or line:match("^\t(.-)$") or ""
