@@ -87,6 +87,14 @@ if not link_res:find('<a href="url">test</a>') then
     success = false
 end
 
+-- Nested Blockquote Test
+local nested_quote_md = "> Level 1\n> > Level 2\n> Level 1 again"
+local nested_res = parser.parse(nested_quote_md)
+if not nested_res:find("<blockquote><blockquote>Level 2</blockquote>") then
+    print("Nested Blockquote Test Failed!")
+    success = false
+end
+
 if success then
     print("\nTest Passed!")
 else

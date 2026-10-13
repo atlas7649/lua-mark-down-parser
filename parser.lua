@@ -72,7 +72,7 @@ function parser.parse(text)
     local html = {}
     local in_list = false
     local list_type = nil -- 'ul' or 'ol'
-    local in_quote = false
+    local quote_depth = 0
     local block_type = nil -- 'fenced' or 'indented'
     local skip_next = false
 
@@ -86,9 +86,9 @@ function parser.parse(text)
             in_list = false
             list_type = nil
         end
-        if in_quote then
+        while quote_depth > 0 do
             table.insert(html, "</blockquote>")
-            in_quote = false
+            quote_depth = quote_depth - 1
         end
     end
 
@@ -216,18 +216,28 @@ function parser.parse(text)
         end
 
         -- Blockquotes
-        if line:match("^>") then
-            if not in_quote then
-                close_blocks()
+        local quote_match = line:match("^(%s*>+)")
+        if quote_match then
+            local current_depth = #quote_match:gsub("\s", "")
+            -- Open needed levels
+            while quote_depth < current_depth do
+                if not (in_list or block_type) then close_blocks() end
                 table.insert(html, "<blockquote>")
-                in_quote = true
+                quote_depth = quote_depth + 1
             end
-            local content = line:sub(2):gsub("^%s", "")
+            -- Close too many levels
+            while quote_depth > current_depth do
+                table.insert(html, "</blockquote>")
+                quote_depth = quote_depth - 1
+            end
+            local content = line:gsub("^%s*>+%s*", "")
             table.insert(html, parser.inline(content))
             goto continue
-        elseif in_quote and line ~= "" then
-            table.insert(html, "</blockquote>")
-            in_quote = false
+        elseif quote_depth > 0 and line ~= "" then
+            while quote_depth > 0 do
+                table.insert(html, "</blockquote>")
+                quote_depth = quote_depth - 1
+            end
         end
 
         -- Lists
@@ -259,7 +269,7 @@ function parser.parse(text)
 
         -- Paragraphs
         if line ~= "" then
-            if not in_quote then
+            if not (quote_depth > 0) then
                 close_blocks()
             end
             table.insert(html, "<p>" .. parser.inline(line) .. "</p>")
