@@ -267,8 +267,8 @@ function parser.parse(text)
             
             -- Handle Task Lists for unordered lists
             if current_type == "ul" then
-                content = content:gsub("^%s*\[%s*x%s*\]%s*(.-)$", "<input type='checkbox' checked disabled> %1")
-                content = content:gsub("^%s*\[%s* %s*\]%s*(.-)$", "<input type='checkbox' disabled> %1")
+                content = content:gsub("^%s*%[%s*[xX]%s*%]%s*(.-)$", "<input type='checkbox' checked disabled> %1")
+                content = content:gsub("^%s*%[%s* %s*%]%s*(.-)$", "<input type='checkbox' disabled> %1")
             end
 
             if not in_list or list_type ~= current_type then
