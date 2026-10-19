@@ -22,8 +22,8 @@ function parser.inline(text)
         if res:sub(i, i) == "\" then
             local char = res:sub(i+1, i+1)
             if char ~= "" then
-                local placeholder = "__ESC" .. #escapes .. "__"
                 escapes[#escapes + 1] = char
+                local placeholder = "__ESC" .. #escapes .. "__"
                 res = res:sub(1, i-1) .. placeholder .. res:sub(i+2)
                 i = i + #placeholder
                 goto continue
@@ -57,13 +57,16 @@ function parser.inline(text)
     -- Restore escaped characters
     for idx = #escapes, 1, -1 do
         local placeholder = "__ESC" .. idx .. "__"
-        res = res:gsub(placeholder, escapes[idx])
+        res = res:gsub(placeholder, function() return escapes[idx] end)
     end
 
     return res
 end
 
 function parser.parse(text)
+    text = text:gsub("\r\n", "\n")
+    text = text:gsub("\r", "\n")
+
     local lines = {}
     for line in text:gmatch("[^\n]*") do
         table.insert(lines, line)
@@ -153,12 +156,14 @@ function parser.parse(text)
 
         -- Headers (ATX style)
         local hashes = line:match("^(#+)")
-        if hashes then
-            close_blocks()
-            local level = #hashes
-            local text = line:sub(level + 2)
-            table.insert(html, string.format("<h%d>%s</h%d>", level, parser.inline(text), level))
-            goto continue
+        if hashes and #hashes <= 6 then
+            local rest = line:sub(#hashes + 1)
+            if rest == "" or rest:match("^%s") then
+                close_blocks()
+                local text = rest:gsub("^%s+", ""):gsub("%s+$", "")
+                table.insert(html, string.format("<h%d>%s</h%d>", #hashes, parser.inline(text), #hashes))
+                goto continue
+            end
         end
 
         -- Setext-style Headers (Underlined)
