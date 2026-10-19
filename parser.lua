@@ -92,6 +92,18 @@ function parser.parse(text)
         end
     end
 
+    local function close_code_and_list()
+        if block_type then
+            table.insert(html, "</code></pre>")
+            block_type = nil
+        end
+        if in_list then
+            table.insert(html, "</" .. list_type .. ">")
+            in_list = false
+            list_type = nil
+        end
+    end
+
     for i, line in ipairs(lines) do
         if skip_next then
             skip_next = false
@@ -150,7 +162,7 @@ function parser.parse(text)
         end
 
         -- Setext-style Headers (Underlined)
-        if i < #lines then
+        if line ~= "" and i < #lines then
             local next_line = lines[i+1]
             if next_line and next_line:match("^={3,}$") then
                 close_blocks()
@@ -216,28 +228,29 @@ function parser.parse(text)
         end
 
         -- Blockquotes
-        local quote_match = line:match("^(%s*>+)")
-        if quote_match then
-            local current_depth = #quote_match:gsub("\s", "")
-            -- Open needed levels
-            while quote_depth < current_depth do
-                if not (in_list or block_type) then close_blocks() end
-                table.insert(html, "<blockquote>")
-                quote_depth = quote_depth + 1
+        local prefix_end = 1
+        while prefix_end <= #line and (line:sub(prefix_end, prefix_end) == " " or line:sub(prefix_end, prefix_end) == ">") do
+            prefix_end = prefix_end + 1
+        end
+        local quote_prefix = line:sub(1, prefix_end - 1)
+        local current_depth = select(2, quote_prefix:gsub(">", ""))
+        if current_depth > 0 then
+            if in_list or block_type then
+                close_code_and_list()
             end
-            -- Close too many levels
             while quote_depth > current_depth do
                 table.insert(html, "</blockquote>")
                 quote_depth = quote_depth - 1
             end
-            local content = line:gsub("^%s*>+%s*", "")
+            while quote_depth < current_depth do
+                table.insert(html, "<blockquote>")
+                quote_depth = quote_depth + 1
+            end
+            local content = line:sub(prefix_end):gsub("^%s*", "")
             table.insert(html, parser.inline(content))
             goto continue
         elseif quote_depth > 0 and line ~= "" then
-            while quote_depth > 0 do
-                table.insert(html, "</blockquote>")
-                quote_depth = quote_depth - 1
-            end
+            close_blocks()
         end
 
         -- Lists
