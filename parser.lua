@@ -178,8 +178,8 @@ function parser.parse(text)
             if #table_lines >= 2 then
                 table.insert(html, "<table>")
                 for row_idx, row_text in ipairs(table_lines) do
-                    -- Skip separator row (e.g., |---|---|
-                    if row_idx == 2 and row_text:match("^|[ %-]*|%") then
+                    -- Skip separator row (e.g., |---|---| or | :---: | :---: |)
+                    if row_idx == 2 and row_text:match("^|%s*:?-+:?%s*(|%s*:?-+:?%s*)*|$") then
                         goto skip_row
                     end
                     
