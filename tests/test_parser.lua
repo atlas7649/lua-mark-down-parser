@@ -29,4 +29,17 @@ assert_contains(task_html, "<input type='checkbox' disabled> todo")
 assert_contains(task_html, "<input type='checkbox' checked disabled> done")
 assert_contains(task_html, "<input type='checkbox' checked disabled> done2")
 
+local fenced = parser.parse("```\nhello\nworld\n```")
+assert_contains(fenced, "<pre><code class=\"\">")
+assert_contains(fenced, "hello")
+assert_contains(fenced, "world")
+
+assert_eq(parser.parse("---"), "<hr />")
+
+local table_md = "| a | b |\n|---|---|\n| 1 | 2 |"
+local table_html = parser.parse(table_md)
+assert_contains(table_html, "<table>")
+assert_contains(table_html, "<th>a</th>")
+assert_contains(table_html, "<td>1</td>")
+
 print("all parser tests passed")

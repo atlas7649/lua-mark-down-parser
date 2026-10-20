@@ -19,7 +19,7 @@ function parser.inline(text)
     local escapes = {}
     local i = 1
     while i <= #res do
-        if res:sub(i, i) == "\" then
+        if res:sub(i, i) == "\\" then
             local char = res:sub(i+1, i+1)
             if char ~= "" then
                 escapes[#escapes + 1] = char
@@ -77,7 +77,6 @@ function parser.parse(text)
     local list_type = nil -- 'ul' or 'ol'
     local quote_depth = 0
     local block_type = nil -- 'fenced' or 'indented'
-    local skip_next = false
 
     local function close_blocks()
         if block_type then
@@ -107,11 +106,9 @@ function parser.parse(text)
         end
     end
 
-    for i, line in ipairs(lines) do
-        if skip_next then
-            skip_next = false
-            goto continue
-        end
+    local i = 1
+    while i <= #lines do
+        local line = lines[i]
 
         -- Fenced Code Block
         if line:match("^```") then
@@ -120,7 +117,7 @@ function parser.parse(text)
                 block_type = nil
             else
                 close_blocks()
-                local lang = line:match("^```(%S*)") or ""
+                local lang = line:match("^```%s*(%S*)") or ""
                 table.insert(html, string.format("<pre><code class=\"%s\">", html_escape(lang)))
                 block_type = "fenced"
             end
@@ -142,13 +139,18 @@ function parser.parse(text)
             block_type = nil
         end
 
+        if block_type == "indented" and line == "" then
+            table.insert(html, "")
+            goto continue
+        end
+
         if block_type == "fenced" then
             table.insert(html, html_escape(line))
             goto continue
         end
 
         -- Horizontal Rule
-        if line:match("^---$") then
+        if line:match("^%s*---+%s*$") then
             close_blocks()
             table.insert(html, "<hr />")
             goto continue
@@ -172,12 +174,12 @@ function parser.parse(text)
             if next_line and next_line:match("^={3,}$") then
                 close_blocks()
                 table.insert(html, string.format("<h1>%s</h1>", parser.inline(line)))
-                skip_next = true
+                i = i + 1
                 goto continue
             elseif next_line and next_line:match("^-{3,}$") then
                 close_blocks()
                 table.insert(html, string.format("<h2>%s</h2>", parser.inline(line)))
-                skip_next = true
+                i = i + 1
                 goto continue
             end
         end
@@ -254,7 +256,7 @@ function parser.parse(text)
             local content = line:sub(prefix_end):gsub("^%s*", "")
             table.insert(html, parser.inline(content))
             goto continue
-        elseif quote_depth > 0 and line ~= "" then
+        elseif quote_depth > 0 then
             close_blocks()
         end
 
@@ -294,6 +296,7 @@ function parser.parse(text)
         end
 
         ::continue::
+        i = i + 1
     end
 
     close_blocks()
