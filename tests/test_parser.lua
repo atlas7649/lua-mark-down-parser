@@ -34,6 +34,11 @@ assert_contains(fenced, "<pre><code class=\"\">")
 assert_contains(fenced, "hello")
 assert_contains(fenced, "world")
 
+local indented = parser.parse("    hello\n    world")
+assert_contains(indented, "<pre><code>")
+assert_contains(indented, "hello")
+assert_contains(indented, "world")
+
 assert_eq(parser.parse("---"), "<hr />")
 
 local table_md = "| a | b |\n|---|---|\n| 1 | 2 |"
@@ -41,5 +46,8 @@ local table_html = parser.parse(table_md)
 assert_contains(table_html, "<table>")
 assert_contains(table_html, "<th>a</th>")
 assert_contains(table_html, "<td>1</td>")
+
+local quote_then_list = parser.parse("> quote\n- item")
+assert_contains(quote_then_list, "</blockquote>")
 
 print("all parser tests passed")

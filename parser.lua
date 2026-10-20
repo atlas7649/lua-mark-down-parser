@@ -128,7 +128,7 @@ function parser.parse(text)
         if block_type ~= "fenced" and (line:match("^    ") or line:match("^\t")) then
             if block_type ~= "indented" then
                 close_blocks()
-                table.insert(html, "<pre><code >")
+                table.insert(html, "<pre><code>")
                 block_type = "indented"
             end
             local content = line:match("^    (.-)$") or line:match("^\t(.-)$") or ""
@@ -267,6 +267,12 @@ function parser.parse(text)
             local current_type = ul_match and "ul" or "ol"
             local content = ul_match or ol_match
             
+            -- Close any open blockquote before starting a list.
+            while quote_depth > 0 do
+                table.insert(html, "</blockquote>")
+                quote_depth = quote_depth - 1
+            end
+
             -- Handle Task Lists for unordered lists
             if current_type == "ul" then
                 content = content:gsub("^%s*%[%s*[xX]%s*%]%s*(.-)$", "<input type='checkbox' checked disabled> %1")
