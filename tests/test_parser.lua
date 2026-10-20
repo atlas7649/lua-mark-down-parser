@@ -40,6 +40,8 @@ assert_contains(indented, "hello")
 assert_contains(indented, "world")
 
 assert_eq(parser.parse("---"), "<hr />")
+assert_eq(parser.parse("***"), "<hr />")
+assert_eq(parser.parse("___"), "<hr />")
 
 local table_md = "| a | b |\n|---|---|\n| 1 | 2 |"
 local table_html = parser.parse(table_md)
@@ -47,7 +49,18 @@ assert_contains(table_html, "<table>")
 assert_contains(table_html, "<th>a</th>")
 assert_contains(table_html, "<td>1</td>")
 
+local aligned_table = parser.parse("| a | b |\n|:---:|---:|\n| 1 | 2 |")
+assert_contains(aligned_table, "<th>a</th>")
+assert_contains(aligned_table, "<td>2</td>")
+
 local quote_then_list = parser.parse("> quote\n- item")
 assert_contains(quote_then_list, "</blockquote>")
+
+local indented_fence = parser.parse("  ```lua\nvalue\n  ```")
+assert_contains(indented_fence, "<pre><code class=\"lua\">")
+assert_contains(indented_fence, "value")
+
+local spaced_header = parser.parse("  ## Hello")
+assert_contains(spaced_header, "<h2>Hello</h2>")
 
 print("all parser tests passed")

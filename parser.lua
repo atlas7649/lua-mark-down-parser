@@ -11,6 +11,35 @@ local function html_escape(text)
     return (text:gsub("[%&<>\"']", replacements))
 end
 
+local function is_table_separator(row_text)
+    local row = row_text:match("^%s*(.-)%s*$")
+    if not row or not row:match("^|") then
+        return false
+    end
+
+    local inner = row:gsub("^|", "")
+    inner = inner:gsub("|%s*$", "")
+    if inner == "" then
+        return false
+    end
+
+    local pos = 1
+    while pos <= #inner do
+        local pipe = inner:find("|", pos, true)
+        local cell = pipe and inner:sub(pos, pipe - 1) or inner:sub(pos)
+        local trimmed = cell:match("^%s*(.-)%s*$")
+        if not trimmed or not trimmed:match("^:?-+:?$") then
+            return false
+        end
+        if not pipe then
+            break
+        end
+        pos = pipe + 1
+    end
+
+    return true
+end
+
 function parser.inline(text)
     if not text or text == "" then return "" end
     local res = text
@@ -111,13 +140,14 @@ function parser.parse(text)
         local line = lines[i]
 
         -- Fenced Code Block
-        if line:match("^```") then
+        local fence_leading = line:match("^(%s*)```")
+        if fence_leading and #fence_leading <= 3 then
             if block_type == "fenced" then
                 table.insert(html, "</code></pre>")
                 block_type = nil
             else
                 close_blocks()
-                local lang = line:match("^```%s*(%S*)") or ""
+                local lang = line:match("^%s*```%s*(%S*)") or ""
                 table.insert(html, string.format("<pre><code class=\"%s\">", html_escape(lang)))
                 block_type = "fenced"
             end
@@ -134,12 +164,12 @@ function parser.parse(text)
             local content = line:match("^    (.-)$") or line:match("^\t(.-)$") or ""
             table.insert(html, html_escape(content))
             goto continue
-        elseif block_type == "indented" and not (line:match("^    ") or line:match("^\t")) and line ~= "" then
+        elseif block_type == "indented" and not (line:match("^    ") or line:match("^\t")) and line:match("%S") then
             table.insert(html, "</code></pre>")
             block_type = nil
         end
 
-        if block_type == "indented" and line == "" then
+        if block_type == "indented" and not line:match("%S") then
             table.insert(html, "")
             goto continue
         end
@@ -149,17 +179,18 @@ function parser.parse(text)
             goto continue
         end
 
-        -- Horizontal Rule
-        if line:match("^%s*---+%s*$") then
+        -- Horizontal Rule / Thematic Break
+        local hr_stripped = line:gsub("%s", "")
+        if #hr_stripped >= 3 and (hr_stripped:match("^%-+$") or hr_stripped:match("^%*+$") or hr_stripped:match("^_+$")) then
             close_blocks()
             table.insert(html, "<hr />")
             goto continue
         end
 
         -- Headers (ATX style)
-        local hashes = line:match("^(#+)")
-        if hashes and #hashes <= 6 then
-            local rest = line:sub(#hashes + 1)
+        local leading, hashes = line:match("^(%s*)(#+)")
+        if leading and #leading <= 3 and hashes and #hashes <= 6 then
+            local rest = line:sub(#leading + #hashes + 1)
             if rest == "" or rest:match("^%s") then
                 close_blocks()
                 local text = rest:gsub("^%s+", ""):gsub("%s+$", "")
@@ -169,14 +200,14 @@ function parser.parse(text)
         end
 
         -- Setext-style Headers (Underlined)
-        if line ~= "" and i < #lines then
+        if line:match("%S") and i < #lines then
             local next_line = lines[i+1]
-            if next_line and next_line:match("^={3,}$") then
+            if next_line and next_line:match("^%s*=%s*=%s*=%s*$") then
                 close_blocks()
                 table.insert(html, string.format("<h1>%s</h1>", parser.inline(line)))
                 i = i + 1
                 goto continue
-            elseif next_line and next_line:match("^-{3,}$") then
+            elseif next_line and next_line:match("^%s*%-{3,}%s*$") then
                 close_blocks()
                 table.insert(html, string.format("<h2>%s</h2>", parser.inline(line)))
                 i = i + 1
@@ -198,16 +229,16 @@ function parser.parse(text)
                 table.insert(html, "<table>")
                 for row_idx, row_text in ipairs(table_lines) do
                     -- Skip separator row (e.g., |---|---| or | :---: | :---: |)
-                    if row_idx == 2 and row_text:match("^|%s*:?-+:?%s*(|%s*:?-+:?%s*)*|$") then
+                    if row_idx == 2 and is_table_separator(row_text) then
                         goto skip_row
                     end
-                    
+
                     local tag = (row_idx == 1) and "th" or "td"
                     table.insert(html, "<tr>")
-                    
+
                     -- Remove leading and trailing pipes
                     local row = row_text:gsub("^|", ""):gsub("|$", "")
-                    
+
                     -- Split by pipe manually to handle empty cells
                     local cells = {}
                     local current = ""
@@ -220,11 +251,11 @@ function parser.parse(text)
                         end
                     end
                     table.insert(cells, current)
-                    
+
                     for _, cell in ipairs(cells) do
                         table.insert(html, string.format("<%s>%s</%s>", tag, parser.inline(cell:gsub("^%s*(.-)%s*$", "%1")), tag))
                     end
-                    
+
                     table.insert(html, "</tr>")
                     ::skip_row::
                 end
@@ -266,7 +297,7 @@ function parser.parse(text)
         if ul_match or ol_match then
             local current_type = ul_match and "ul" or "ol"
             local content = ul_match or ol_match
-            
+
             -- Close any open blockquote before starting a list.
             while quote_depth > 0 do
                 table.insert(html, "</blockquote>")
@@ -287,14 +318,14 @@ function parser.parse(text)
             end
             table.insert(html, "<li>" .. parser.inline(content) .. "</li>")
             goto continue
-        elseif in_list and line ~= "" then
+        elseif in_list and line:match("%S") then
             table.insert(html, "</" .. list_type .. ">")
             in_list = false
             list_type = nil
         end
 
         -- Paragraphs
-        if line ~= "" then
+        if line:match("%S") then
             if not (quote_depth > 0) then
                 close_blocks()
             end
