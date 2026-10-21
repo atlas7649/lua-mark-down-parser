@@ -72,7 +72,7 @@ function parser.inline(text)
     res = res:gsub("%[(.-)%]%((.-)%)", function(text, url) return string.format('<a href="%s">%s</a>', html_escape(url), parser.inline(text)) end)
 
     -- Strike-through: ~~text~~
-    res = res:gsub("%~%~([^%n~]+)%~%~", "<del>%1</del>")
+    res = res:gsub("%~%~([^%n~]+)%~%~", function(content) return "<del>" .. parser.inline(content) .. "</del>" end)
 
     -- Bold-Italic: ***text***
     res = res:gsub("%*%*%*([^*%n]+)%*%*%*", "<strong><em>%1</em></strong>")
@@ -202,12 +202,12 @@ function parser.parse(text)
         -- Setext-style Headers (Underlined)
         if line:match("%S") and i < #lines then
             local next_line = lines[i+1]
-            if next_line and next_line:match("^%s*=%s*=%s*=%s*$") then
+            if next_line and next_line:match("^%s*=+%s*$") then
                 close_blocks()
                 table.insert(html, string.format("<h1>%s</h1>", parser.inline(line)))
                 i = i + 1
                 goto continue
-            elseif next_line and next_line:match("^%s*%-{3,}%s*$") then
+            elseif next_line and next_line:match("^%s*%-+%s*$") then
                 close_blocks()
                 table.insert(html, string.format("<h2>%s</h2>", parser.inline(line)))
                 i = i + 1
@@ -216,11 +216,11 @@ function parser.parse(text)
         end
 
         -- Tables
-        if line:match("^|") then
+        if line:match("^%s*|") then
             close_blocks()
             local table_lines = {line}
             local j = i + 1
-            while j <= #lines and lines[j]:match("^|") do
+            while j <= #lines and lines[j]:match("^%s*|") do
                 table.insert(table_lines, lines[j])
                 j = j + 1
             end
@@ -236,8 +236,9 @@ function parser.parse(text)
                     local tag = (row_idx == 1) and "th" or "td"
                     table.insert(html, "<tr>")
 
-                    -- Remove leading and trailing pipes
-                    local row = row_text:gsub("^|", ""):gsub("|$", "")
+                    -- Remove leading/trailing whitespace, then leading and trailing pipes
+                    local row = row_text:match("^%s*(.-)%s*$")
+                    row = row:gsub("^|", ""):gsub("|$", "")
 
                     -- Split by pipe manually to handle empty cells
                     local cells = {}
