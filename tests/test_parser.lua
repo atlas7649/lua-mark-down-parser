@@ -71,4 +71,11 @@ assert_eq(parser.parse("  Hello  \n  ====  "), "<h1>Hello</h1>")
 local separated_lists = parser.parse("- a\n\n- b")
 assert_contains(separated_lists, "</ul>\n<ul>")
 
+assert_eq(parser.inline("~~text~~"), "<del>text</del>")
+assert_eq(parser.inline("~~a~~ and ~~b~~"), "<del>a</del> and <del>b</del>")
+assert_eq(parser.inline("~~a~b~~"), "<del>a~b</del>")
+assert_eq(parser.inline("~~*text*~~"), "<del><em>text</em></del>")
+assert_eq(parser.parse("## Hello ##"), "<h2>Hello</h2>")
+assert_eq(parser.parse("# C#"), "<h1>C#</h1>")
+
 print("all parser tests passed")

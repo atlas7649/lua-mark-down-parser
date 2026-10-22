@@ -72,7 +72,12 @@ local function inline_render(text)
     res = res:gsub("%[(.-)%]%((.-)%)", function(text, url) return string.format('<a href="%s">%s</a>', url, inline_render(text)) end)
 
     -- Strike-through: ~~text~~
-    res = res:gsub("%~%~([^%n~]+)%~%~", function(content) return "<del>" .. inline_render(content) .. "</del>" end)
+    res = res:gsub("%~%~([^%n]-)%~%~", function(content)
+        if content == "" then
+            return nil
+        end
+        return "<del>" .. inline_render(content) .. "</del>"
+    end)
 
     -- Bold-Italic: ***text***
     res = res:gsub("%*%*%*([^*%n]+)%*%*%*", "<strong><em>%1</em></strong>")
@@ -204,6 +209,7 @@ function parser.parse(text)
             if rest == "" or rest:match("^%s") then
                 close_blocks()
                 local text = rest:gsub("^%s+", ""):gsub("%s+$", "")
+                text = text:gsub("%s+#+%s*$", "")
                 table.insert(html, string.format("<h%d>%s</h%d>", #hashes, parser.inline(text), #hashes))
                 goto continue
             end
