@@ -40,7 +40,7 @@ local function is_table_separator(row_text)
     return true
 end
 
-function parser.inline(text)
+local function inline_render(text)
     if not text or text == "" then return "" end
     local res = text
 
@@ -63,16 +63,16 @@ function parser.inline(text)
     end
 
     -- Inline Code: `code`
-    res = res:gsub("`(.-)`", function(code) return "<code style='white-space: pre;'>" .. html_escape(code) .. "</code>" end)
+    res = res:gsub("`([^`]*)`", function(code) return "<code style='white-space: pre;'>" .. code .. "</code>" end)
 
     -- Images: ![alt](url)
-    res = res:gsub("!%[(.-)%]%((.-)%)", function(alt, url) return string.format('<img src="%s" alt="%s">', html_escape(url), html_escape(alt)) end)
+    res = res:gsub("!%[(.-)%]%((.-)%)", function(alt, url) return string.format('<img src="%s" alt="%s">', url, alt) end)
 
     -- Hyperlinks: [text](url)
-    res = res:gsub("%[(.-)%]%((.-)%)", function(text, url) return string.format('<a href="%s">%s</a>', html_escape(url), parser.inline(text)) end)
+    res = res:gsub("%[(.-)%]%((.-)%)", function(text, url) return string.format('<a href="%s">%s</a>', url, inline_render(text)) end)
 
     -- Strike-through: ~~text~~
-    res = res:gsub("%~%~([^%n~]+)%~%~", function(content) return "<del>" .. parser.inline(content) .. "</del>" end)
+    res = res:gsub("%~%~([^%n~]+)%~%~", function(content) return "<del>" .. inline_render(content) .. "</del>" end)
 
     -- Bold-Italic: ***text***
     res = res:gsub("%*%*%*([^*%n]+)%*%*%*", "<strong><em>%1</em></strong>")
@@ -90,6 +90,11 @@ function parser.inline(text)
     end
 
     return res
+end
+
+function parser.inline(text)
+    if not text or text == "" then return "" end
+    return inline_render(html_escape(text))
 end
 
 function parser.parse(text)
@@ -179,6 +184,11 @@ function parser.parse(text)
             goto continue
         end
 
+        if not line:match("%S") then
+            close_blocks()
+            goto continue
+        end
+
         -- Horizontal Rule / Thematic Break
         local hr_stripped = line:gsub("%s", "")
         if #hr_stripped >= 3 and (hr_stripped:match("^%-+$") or hr_stripped:match("^%*+$") or hr_stripped:match("^_+$")) then
@@ -204,12 +214,12 @@ function parser.parse(text)
             local next_line = lines[i+1]
             if next_line and next_line:match("^%s*=+%s*$") then
                 close_blocks()
-                table.insert(html, string.format("<h1>%s</h1>", parser.inline(line)))
+                table.insert(html, string.format("<h1>%s</h1>", parser.inline(line:match("^%s*(.-)%s*$"))))
                 i = i + 1
                 goto continue
             elseif next_line and next_line:match("^%s*%-+%s*$") then
                 close_blocks()
-                table.insert(html, string.format("<h2>%s</h2>", parser.inline(line)))
+                table.insert(html, string.format("<h2>%s</h2>", parser.inline(line:match("^%s*(.-)%s*$"))))
                 i = i + 1
                 goto continue
             end
@@ -285,7 +295,7 @@ function parser.parse(text)
                 table.insert(html, "<blockquote>")
                 quote_depth = quote_depth + 1
             end
-            local content = line:sub(prefix_end):gsub("^%s*", "")
+            local content = line:sub(prefix_end):match("^%s*(.-)%s*$")
             table.insert(html, parser.inline(content))
             goto continue
         elseif quote_depth > 0 then
@@ -298,6 +308,7 @@ function parser.parse(text)
         if ul_match or ol_match then
             local current_type = ul_match and "ul" or "ol"
             local content = ul_match or ol_match
+            content = content:gsub("^%s+", ""):gsub("%s+$", "")
 
             -- Close any open blockquote before starting a list.
             while quote_depth > 0 do
@@ -307,8 +318,8 @@ function parser.parse(text)
 
             -- Handle Task Lists for unordered lists
             if current_type == "ul" then
-                content = content:gsub("^%s*%[%s*[xX]%s*%]%s*(.-)$", "<input type='checkbox' checked disabled> %1")
-                content = content:gsub("^%s*%[%s* %s*%]%s*(.-)$", "<input type='checkbox' disabled> %1")
+                content = content:gsub("^%[%s*[xX]%s*%]%s*(.-)%s*$", "<input type='checkbox' checked disabled> %1")
+                content = content:gsub("^%[%s* %s*%]%s*(.-)%s*$", "<input type='checkbox' disabled> %1")
             end
 
             if not in_list or list_type ~= current_type then
@@ -330,7 +341,7 @@ function parser.parse(text)
             if not (quote_depth > 0) then
                 close_blocks()
             end
-            table.insert(html, "<p>" .. parser.inline(line) .. "</p>")
+            table.insert(html, "<p>" .. parser.inline(line:match("^%s*(.-)%s*$")) .. "</p>")
         end
 
         ::continue::

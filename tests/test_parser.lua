@@ -63,4 +63,12 @@ assert_contains(indented_fence, "value")
 local spaced_header = parser.parse("  ## Hello")
 assert_contains(spaced_header, "<h2>Hello</h2>")
 
+assert_eq(parser.inline("<b>text</b>"), "&lt;b&gt;text&lt;/b&gt;")
+assert_contains(parser.parse("Hello <b>world</b>"), "&lt;b&gt;world&lt;/b&gt;")
+assert_eq(parser.parse("  ## Hello  "), "<h2>Hello</h2>")
+assert_eq(parser.parse("  Hello  \n  ====  "), "<h1>Hello</h1>")
+
+local separated_lists = parser.parse("- a\n\n- b")
+assert_contains(separated_lists, "</ul>\n<ul>")
+
 print("all parser tests passed")
