@@ -63,7 +63,16 @@ local function inline_render(text)
     end
 
     -- Inline Code: `code`
-    res = res:gsub("`([^`]*)`", function(code) return "<code style='white-space: pre;'>" .. code .. "</code>" end)
+    -- Extract code spans before other inline transformations so that their
+    -- contents are not mistaken for emphasis, links, images, or strikethrough.
+    local code_spans = {}
+    local code_index = 0
+    res = res:gsub("`([^`]*)`", function(code)
+        code_index = code_index + 1
+        local token = "__CODE" .. code_index .. "__"
+        code_spans[token] = "<code style='white-space: pre;'>" .. code .. "</code>"
+        return token
+    end)
 
     -- Images: ![alt](url)
     res = res:gsub("!%[(.-)%]%((.-)%)", function(alt, url) return string.format('<img src="%s" alt="%s">', url, alt) end)
@@ -92,6 +101,11 @@ local function inline_render(text)
     for idx = #escapes, 1, -1 do
         local placeholder = "__ESC" .. idx .. "__"
         res = res:gsub(placeholder, function() return escapes[idx] end)
+    end
+
+    -- Restore extracted inline code spans
+    for token, replacement in pairs(code_spans) do
+        res = res:gsub(token, function() return replacement end)
     end
 
     return res

@@ -20,6 +20,9 @@ assert_eq(parser.inline("[text](http://example.com)"), '<a href="http://example.
 assert_eq(parser.inline("`a < b`"), "<code style='white-space: pre;'>a &lt; b</code>")
 assert_eq(parser.inline("\\*literal\\*"), "*literal*")
 
+assert_eq(parser.inline("`*not bold*`"), "<code style='white-space: pre;'>*not bold*</code>")
+assert_eq(parser.inline("`~~no strike~~`"), "<code style='white-space: pre;'>~~no strike~~</code>")
+
 local nested = parser.parse("> > nested")
 assert_contains(nested, "<blockquote>\n<blockquote>\nnested")
 
