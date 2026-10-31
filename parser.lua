@@ -336,10 +336,21 @@ function parser.parse(text)
                 quote_depth = quote_depth - 1
             end
 
-            -- Handle Task Lists for unordered lists
+            -- Handle Task Lists for unordered lists. Keep the checkbox as
+            -- literal HTML; only inline-render the text that follows it.
+            local task_prefix = ""
             if current_type == "ul" then
-                content = content:gsub("^%[%s*[xX]%s*%]%s*(.-)%s*$", "<input type='checkbox' checked disabled> %1")
-                content = content:gsub("^%[%s* %s*%]%s*(.-)%s*$", "<input type='checkbox' disabled> %1")
+                local checked = content:match("^%[%s*[xX]%s*%]%s*(.-)%s*$")
+                if checked then
+                    task_prefix = "<input type='checkbox' checked disabled> "
+                    content = checked
+                else
+                    local unchecked = content:match("^%[%s* %s*%]%s*(.-)%s*$")
+                    if unchecked then
+                        task_prefix = "<input type='checkbox' disabled> "
+                        content = unchecked
+                    end
+                end
             end
 
             if not in_list or list_type ~= current_type then
@@ -348,7 +359,7 @@ function parser.parse(text)
                 in_list = true
                 list_type = current_type
             end
-            table.insert(html, "<li>" .. parser.inline(content) .. "</li>")
+            table.insert(html, "<li>" .. task_prefix .. parser.inline(content) .. "</li>")
             goto continue
         elseif in_list and line:match("%S") then
             table.insert(html, "</" .. list_type .. ">")
