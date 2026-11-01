@@ -112,7 +112,9 @@ local function inline_render(text)
 end
 
 function parser.inline(text)
-    if not text or text == "" then return "" end
+    if text == nil then return "" end
+    text = tostring(text)
+    if text == "" then return "" end
     return inline_render(html_escape(text))
 end
 
