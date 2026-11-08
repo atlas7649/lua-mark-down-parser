@@ -348,8 +348,8 @@ function parser.parse(text)
         end
 
         -- Lists
-        local ul_match = line:match("^%s*-%s*(.-)$")
-        local ol_match = line:match("^%s*%d+%.%s*(.-)$")
+        local ul_match = line:match("^%s*-%s+(.-)$")
+        local ol_match = line:match("^%s*%d+%.%s+(.-)$")
         if ul_match or ol_match then
             local current_type = ul_match and "ul" or "ol"
             local content = ul_match or ol_match
