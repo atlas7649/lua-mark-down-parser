@@ -44,6 +44,19 @@ local function inline_render(text)
     if not text or text == "" then return "" end
     local res = text
 
+    -- Inline Code: extract code spans before backslash escaping and all other
+    -- inline transformations. This keeps an escaped backtick from starting a
+    -- code span and prevents escape processing or Markdown transforms from
+    -- altering the contents of a genuine code span.
+    local code_spans = {}
+    local code_index = 0
+    res = res:gsub("`([^`]*)`", function(code)
+        code_index = code_index + 1
+        local token = "__CODE" .. code_index .. "__"
+        code_spans[token] = "<code style='white-space: pre;'>" .. code .. "</code>"
+        return token
+    end)
+
     -- Handle escaping: \* -> *, \` -> `, \~ -> ~, etc.
     local escapes = {}
     local i = 1
@@ -61,18 +74,6 @@ local function inline_render(text)
         i = i + 1
         ::continue::
     end
-
-    -- Inline Code: `code`
-    -- Extract code spans before other inline transformations so that their
-    -- contents are not mistaken for emphasis, links, images, or strikethrough.
-    local code_spans = {}
-    local code_index = 0
-    res = res:gsub("`([^`]*)`", function(code)
-        code_index = code_index + 1
-        local token = "__CODE" .. code_index .. "__"
-        code_spans[token] = "<code style='white-space: pre;'>" .. code .. "</code>"
-        return token
-    end)
 
     -- Images: ![alt](url)
     res = res:gsub("!%[(.-)%]%((.-)%)", function(alt, url) return string.format('<img src="%s" alt="%s">', url, alt) end)
@@ -119,6 +120,8 @@ function parser.inline(text)
 end
 
 function parser.parse(text)
+    if text == nil then return "" end
+    text = tostring(text)
     text = text:gsub("\r\n", "\n")
     text = text:gsub("\r", "\n")
 

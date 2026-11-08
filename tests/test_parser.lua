@@ -81,4 +81,10 @@ assert_eq(parser.inline("~~*text*~~"), "<del><em>text</em></del>")
 assert_eq(parser.parse("## Hello ##"), "<h2>Hello</h2>")
 assert_eq(parser.parse("# C#"), "<h1>C#</h1>")
 
+assert_eq(parser.parse(nil), "")
+assert_eq(parser.parse(123), "<p>123</p>")
+assert_eq(parser.inline(nil), "")
+assert_eq(parser.inline(42), "42")
+assert_eq(parser.inline("`\\*not emphasis*`"), "<code style='white-space: pre;'>\\*not emphasis*</code>")
+
 print("all parser tests passed")
