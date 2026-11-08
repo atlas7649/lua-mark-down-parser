@@ -40,6 +40,16 @@ local function is_table_separator(row_text)
     return true
 end
 
+local function count_preceding_backslashes(text, pos)
+    local count = 0
+    local i = pos - 1
+    while i >= 1 and text:sub(i, i) == "\\" do
+        count = count + 1
+        i = i - 1
+    end
+    return count
+end
+
 local function inline_render(text)
     if not text or text == "" then return "" end
     local res = text
@@ -51,7 +61,7 @@ local function inline_render(text)
     local extracted = {}
     local i = 1
     while i <= #res do
-        if res:sub(i, i) == "`" and (i == 1 or res:sub(i - 1, i - 1) ~= "\\") then
+        if res:sub(i, i) == "`" and count_preceding_backslashes(res, i) % 2 == 0 then
             local closing = nil
             local search = i + 1
             while true do
@@ -59,11 +69,11 @@ local function inline_render(text)
                 if not pos then
                     break
                 end
-                if pos > 1 and res:sub(pos - 1, pos - 1) == "\\" then
-                    search = pos + 1
-                else
+                if count_preceding_backslashes(res, pos) % 2 == 0 then
                     closing = pos
                     break
+                else
+                    search = pos + 1
                 end
             end
             if closing then
