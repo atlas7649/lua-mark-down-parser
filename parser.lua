@@ -52,7 +52,20 @@ local function inline_render(text)
     local i = 1
     while i <= #res do
         if res:sub(i, i) == "`" and (i == 1 or res:sub(i - 1, i - 1) ~= "\\") then
-            local closing = res:find("`", i + 1, true)
+            local closing = nil
+            local search = i + 1
+            while true do
+                local pos = res:find("`", search, true)
+                if not pos then
+                    break
+                end
+                if pos > 1 and res:sub(pos - 1, pos - 1) == "\\" then
+                    search = pos + 1
+                else
+                    closing = pos
+                    break
+                end
+            end
             if closing then
                 code_index = code_index + 1
                 local code = res:sub(i + 1, closing - 1)
