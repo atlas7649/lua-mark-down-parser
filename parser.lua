@@ -104,9 +104,15 @@ local function inline_render(text)
         res = res:gsub(placeholder, function() return escapes[idx] end)
     end
 
-    -- Restore extracted inline code spans
-    for token, replacement in pairs(code_spans) do
-        res = res:gsub(token, function() return replacement end)
+    -- Restore extracted inline code spans. Longer placeholders must be restored
+    -- first because shorter ones are substrings of longer ones.
+    local code_tokens = {}
+    for token in pairs(code_spans) do
+        code_tokens[#code_tokens + 1] = token
+    end
+    table.sort(code_tokens, function(a, b) return #a > #b end)
+    for _, token in ipairs(code_tokens) do
+        res = res:gsub(token, function() return code_spans[token] end)
     end
 
     return res
