@@ -45,17 +45,31 @@ local function inline_render(text)
     local res = text
 
     -- Inline Code: extract code spans before backslash escaping and all other
-    -- inline transformations. This keeps an escaped backtick from starting a
-    -- code span and prevents escape processing or Markdown transforms from
-    -- altering the contents of a genuine code span.
+    -- inline transformations. An escaped backtick is not a code delimiter.
     local code_spans = {}
     local code_index = 0
-    res = res:gsub("`([^`]*)`", function(code)
-        code_index = code_index + 1
-        local token = "__CODE" .. code_index .. "__"
-        code_spans[token] = "<code style='white-space: pre;'>" .. code .. "</code>"
-        return token
-    end)
+    local extracted = {}
+    local i = 1
+    while i <= #res do
+        if res:sub(i, i) == "`" and (i == 1 or res:sub(i - 1, i - 1) ~= "\\") then
+            local closing = res:find("`", i + 1, true)
+            if closing then
+                code_index = code_index + 1
+                local code = res:sub(i + 1, closing - 1)
+                local token = "__CODE" .. code_index .. "__"
+                code_spans[token] = "<code style='white-space: pre;'>" .. code .. "</code>"
+                extracted[#extracted + 1] = token
+                i = closing + 1
+            else
+                extracted[#extracted + 1] = res:sub(i, i)
+                i = i + 1
+            end
+        else
+            extracted[#extracted + 1] = res:sub(i, i)
+            i = i + 1
+        end
+    end
+    res = table.concat(extracted)
 
     -- Handle escaping: \* -> *, \` -> `, \~ -> ~, etc.
     local escapes = {}
