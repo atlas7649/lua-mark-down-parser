@@ -87,4 +87,8 @@ assert_eq(parser.inline(nil), "")
 assert_eq(parser.inline(42), "42")
 assert_eq(parser.inline("`\\*not emphasis*`"), "<code style='white-space: pre;'>\\*not emphasis*</code>")
 
+local code_then_list = parser.parse("```\nhello\n```\n- item")
+assert_contains(code_then_list, "</code></pre>\n<ul>")
+assert_contains(code_then_list, "<li>item</li>")
+
 print("all parser tests passed")

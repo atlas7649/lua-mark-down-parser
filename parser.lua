@@ -403,6 +403,10 @@ function parser.parse(text)
 
             if not in_list or list_type ~= current_type then
                 if in_list then table.insert(html, "</" .. list_type .. ">") end
+                if block_type then
+                    table.insert(html, "</code></pre>")
+                    block_type = nil
+                end
                 table.insert(html, "<" .. current_type .. ">")
                 in_list = true
                 list_type = current_type
