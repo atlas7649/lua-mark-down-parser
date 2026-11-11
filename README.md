@@ -19,3 +19,18 @@ A simple, lightweight Markdown to HTML converter written in pure Lua.
 - Tables
 - Horizontal Rules (---, ***, ___)
 - Strikethrough (~~text~~)
+
+## Usage
+
+```lua
+local parser = require("parser")
+
+print(parser.parse("# Hello World"))
+print(parser.inline("**bold** and *italic*"))
+```
+
+## Running Tests
+
+```sh
+lua tests/test_parser.lua
+```

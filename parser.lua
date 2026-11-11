@@ -127,13 +127,28 @@ local function inline_render(text)
     end)
 
     -- Bold-Italic: ***text***
-    res = res:gsub("%*%*%*([^*%n]+)%*%*%*", "<strong><em>%1</em></strong>")
+    res = res:gsub("(%*%*%*([^%n]-)%*%*%*)", function(match, content)
+        if content == "" then
+            return match
+        end
+        return "<strong><em>" .. inline_render(content) .. "</em></strong>"
+    end)
 
     -- Bold: **text**
-    res = res:gsub("%*%*([^*%n]+)%*%*", "<strong>%1</strong>")
+    res = res:gsub("(%*%*([^%n]-)%*%*)", function(match, content)
+        if content == "" then
+            return match
+        end
+        return "<strong>" .. inline_render(content) .. "</strong>"
+    end)
 
     -- Italic: *text*
-    res = res:gsub("%*([^*%n]+)%*", "<em>%1</em>")
+    res = res:gsub("(%*([^%n]-)%*)", function(match, content)
+        if content == "" then
+            return match
+        end
+        return "<em>" .. inline_render(content) .. "</em>"
+    end)
 
     -- Restore escaped characters
     for idx = #escapes, 1, -1 do
