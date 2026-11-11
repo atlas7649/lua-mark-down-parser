@@ -119,7 +119,7 @@ local function inline_render(text)
     res = res:gsub("%[(.-)%]%((.-)%)", function(text, url) return string.format('<a href="%s">%s</a>', url, inline_render(text)) end)
 
     -- Strike-through: ~~text~~
-    res = res:gsub("%~%~([^%n]-)%~%~", function(content)
+    res = res:gsub("%~%~([^\n]-)%~%~", function(content)
         if content == "" then
             return nil
         end
@@ -127,7 +127,7 @@ local function inline_render(text)
     end)
 
     -- Bold-Italic: ***text***
-    res = res:gsub("(%*%*%*([^%n]-)%*%*%*)", function(match, content)
+    res = res:gsub("(%*%*%*([^\n]-)%*%*%*)", function(match, content)
         if content == "" then
             return match
         end
@@ -135,7 +135,7 @@ local function inline_render(text)
     end)
 
     -- Bold: **text**
-    res = res:gsub("(%*%*([^%n]-)%*%*)", function(match, content)
+    res = res:gsub("(%*%*([^\n]-)%*%*)", function(match, content)
         if content == "" then
             return match
         end
@@ -143,7 +143,7 @@ local function inline_render(text)
     end)
 
     -- Italic: *text*
-    res = res:gsub("(%*([^%n]-)%*)", function(match, content)
+    res = res:gsub("(%*([^\n]-)%*)", function(match, content)
         if content == "" then
             return match
         end
