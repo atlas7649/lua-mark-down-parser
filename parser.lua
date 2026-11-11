@@ -282,14 +282,6 @@ function parser.parse(text)
             goto continue
         end
 
-        -- Horizontal Rule / Thematic Break
-        local hr_stripped = line:gsub("%s", "")
-        if #hr_stripped >= 3 and (hr_stripped:match("^%-+$") or hr_stripped:match("^%*+$") or hr_stripped:match("^_+$")) then
-            close_blocks()
-            table.insert(html, "<hr />")
-            goto continue
-        end
-
         -- Headers (ATX style)
         local leading, hashes = line:match("^(%s*)(#+)")
         if leading and #leading <= 3 and hashes and #hashes <= 6 then
@@ -317,6 +309,14 @@ function parser.parse(text)
                 i = i + 1
                 goto continue
             end
+        end
+
+        -- Horizontal Rule / Thematic Break
+        local hr_stripped = line:gsub("%s", "")
+        if #hr_stripped >= 3 and (hr_stripped:match("^%-+$") or hr_stripped:match("^%*+$") or hr_stripped:match("^_+$")) then
+            close_blocks()
+            table.insert(html, "<hr />")
+            goto continue
         end
 
         -- Tables
