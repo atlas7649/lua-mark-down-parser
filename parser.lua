@@ -193,11 +193,13 @@ function parser.parse(text)
     local list_type = nil -- 'ul' or 'ol'
     local quote_depth = 0
     local block_type = nil -- 'fenced' or 'indented'
+    local fence_length = nil
 
     local function close_blocks()
         if block_type then
             table.insert(html, "</code></pre>")
             block_type = nil
+            fence_length = nil
         end
         if in_list then
             table.insert(html, "</" .. list_type .. ">")
@@ -214,6 +216,7 @@ function parser.parse(text)
         if block_type then
             table.insert(html, "</code></pre>")
             block_type = nil
+            fence_length = nil
         end
         if in_list then
             table.insert(html, "</" .. list_type .. ">")
@@ -227,16 +230,23 @@ function parser.parse(text)
         local line = lines[i]
 
         -- Fenced Code Block
-        local fence_leading = line:match("^(%s*)```")
-        if fence_leading and #fence_leading <= 3 then
+        local fence_leading, fence_ticks = line:match("^(%s*)(```+)")
+        if fence_leading and #fence_leading <= 3 and fence_ticks then
             if block_type == "fenced" then
-                table.insert(html, "</code></pre>")
-                block_type = nil
+                local rest = line:sub(#fence_leading + #fence_ticks + 1)
+                if rest:match("^%s*$") and #fence_ticks >= (fence_length or 3) then
+                    table.insert(html, "</code></pre>")
+                    block_type = nil
+                    fence_length = nil
+                else
+                    table.insert(html, html_escape(line))
+                end
             else
                 close_blocks()
-                local lang = line:match("^%s*```%s*(%S*)") or ""
+                local lang = line:match("^%s*```+%s*(%S*)") or ""
                 table.insert(html, string.format("<pre><code class=\"%s\">", html_escape(lang)))
                 block_type = "fenced"
+                fence_length = #fence_ticks
             end
             goto continue
         end
@@ -254,6 +264,7 @@ function parser.parse(text)
         elseif block_type == "indented" and not (line:match("^    ") or line:match("^\t")) and line:match("%S") then
             table.insert(html, "</code></pre>")
             block_type = nil
+            fence_length = nil
         end
 
         if block_type == "indented" and not line:match("%S") then
@@ -421,6 +432,7 @@ function parser.parse(text)
                 if block_type then
                     table.insert(html, "</code></pre>")
                     block_type = nil
+                    fence_length = nil
                 end
                 table.insert(html, "<" .. current_type .. ">")
                 in_list = true
