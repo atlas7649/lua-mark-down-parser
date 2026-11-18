@@ -296,7 +296,9 @@ function parser.parse(text)
         end
 
         -- Setext-style Headers (Underlined)
-        if line:match("%S") and i < #lines then
+        local setext_stripped = line:gsub("%s", "")
+        local line_is_hr = #setext_stripped >= 3 and (setext_stripped:match("^%-+$") or setext_stripped:match("^%*+$") or setext_stripped:match("^_+$"))
+        if not line_is_hr and line:match("%S") and i < #lines then
             local next_line = lines[i+1]
             if next_line and next_line:match("^%s*=+%s*$") then
                 close_blocks()
@@ -329,7 +331,7 @@ function parser.parse(text)
                 j = j + 1
             end
 
-            if #table_lines >= 2 then
+            if #table_lines >= 2 and is_table_separator(table_lines[2]) then
                 table.insert(html, "<table>")
                 for row_idx, row_text in ipairs(table_lines) do
                     -- Skip separator row (e.g., |---|---| or | :---: | :---: |)
