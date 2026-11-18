@@ -113,10 +113,10 @@ local function inline_render(text)
     end
 
     -- Images: ![alt](url)
-    res = res:gsub("!%[(.-)%]%((.-)%)", function(alt, url) return string.format('<img src="%s" alt="%s">', url, alt) end)
+    res = res:gsub("!%[([^\n]-)%]%(([^\n]-)%)", function(alt, url) return string.format('<img src="%s" alt="%s">', url, alt) end)
 
     -- Hyperlinks: [text](url)
-    res = res:gsub("%[(.-)%]%((.-)%)", function(text, url) return string.format('<a href="%s">%s</a>', url, inline_render(text)) end)
+    res = res:gsub("%[([^\n]-)%]%(([^\n]-)%)", function(text, url) return string.format('<a href="%s">%s</a>', url, inline_render(text)) end)
 
     -- Strike-through: ~~text~~
     res = res:gsub("%~%~([^\n]-)%~%~", function(content)
