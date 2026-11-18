@@ -184,8 +184,20 @@ function parser.parse(text)
     text = text:gsub("\r", "\n")
 
     local lines = {}
-    for line in text:gmatch("[^\n]*") do
-        table.insert(lines, line)
+    local pos = 1
+    local text_len = #text
+    while pos <= text_len do
+        local nl = text:find("\n", pos, true)
+        if nl then
+            table.insert(lines, text:sub(pos, nl - 1))
+            pos = nl + 1
+        else
+            table.insert(lines, text:sub(pos))
+            pos = text_len + 1
+        end
+    end
+    if #lines == 0 then
+        lines = {""}
     end
 
     local html = {}

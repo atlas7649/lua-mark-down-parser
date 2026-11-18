@@ -74,6 +74,9 @@ assert_eq(parser.parse("  Hello  \n  ====  "), "<h1>Hello</h1>")
 local separated_lists = parser.parse("- a\n\n- b")
 assert_contains(separated_lists, "</ul>\n<ul>")
 
+local consecutive_list = parser.parse("- a\n- b")
+assert_eq(consecutive_list, "<ul>\n<li>a</li>\n<li>b</li>\n</ul>")
+
 assert_eq(parser.inline("~~text~~"), "<del>text</del>")
 assert_eq(parser.inline("~~a~~ and ~~b~~"), "<del>a</del> and <del>b</del>")
 assert_eq(parser.inline("~~a~b~~"), "<del>a~b</del>")
