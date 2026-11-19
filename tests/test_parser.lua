@@ -96,4 +96,8 @@ local code_then_list = parser.parse("```\nhello\n```\n- item")
 assert_contains(code_then_list, "</code></pre>\n<ul>")
 assert_contains(code_then_list, "<li>item</li>")
 
+assert_eq(parser.inline("*not bold*"), "<em>not bold</em>")
+assert_eq(parser.inline("**and**"), "<strong>and</strong>")
+assert_eq(parser.inline("~~not~~"), "<del>not</del>")
+
 print("all parser tests passed")
