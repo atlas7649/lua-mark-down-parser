@@ -104,7 +104,7 @@ local function inline_render(text)
     while i <= #res do
         if res:sub(i, i) == "\\" then
             local char = res:sub(i+1, i+1)
-            if char ~= "" and char ~= "\n" and char:match("^%p$") then
+            if char ~= "" and char ~= "\n" and char:byte() < 128 and char:match("^%p$") then
                 escapes[#escapes + 1] = char
                 local placeholder = "__ESC" .. #escapes .. "__"
                 res = res:sub(1, i-1) .. placeholder .. res:sub(i+2)
