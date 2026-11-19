@@ -249,7 +249,7 @@ function parser.parse(text)
         if fence_leading and #fence_leading <= 3 and fence_ticks then
             if block_type == "fenced" then
                 local rest = line:sub(#fence_leading + #fence_ticks + 1)
-                if rest:match("^%s*$") and #fence_ticks >= (fence_length or 3) then
+                if #fence_leading <= 3 and rest:match("^%s*$") and #fence_ticks >= (fence_length or 3) then
                     table.insert(html, "</code></pre>")
                     block_type = nil
                     fence_length = nil
