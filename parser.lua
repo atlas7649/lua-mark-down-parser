@@ -318,12 +318,13 @@ function parser.parse(text)
         local line_is_hr = #setext_stripped >= 3 and (setext_stripped:match("^%-+$") or setext_stripped:match("^%*+$") or setext_stripped:match("^_+$"))
         if not line_is_hr and line:match("%S") and i < #lines then
             local next_line = lines[i+1]
-            if next_line and next_line:match("^%s*=+%s*$") then
+            local next_leading = next_line and next_line:match("^(%s*)") or ""
+            if #next_leading <= 3 and next_line and next_line:match("^%s*=+%s*$") then
                 close_blocks()
                 table.insert(html, string.format("<h1>%s</h1>", parser.inline(line:match("^%s*(.-)%s*$"))))
                 i = i + 1
                 goto continue
-            elseif next_line and next_line:match("^%s*%-+%s*$") then
+            elseif #next_leading <= 3 and next_line and next_line:match("^%s*%-+%s*$") then
                 close_blocks()
                 table.insert(html, string.format("<h2>%s</h2>", parser.inline(line:match("^%s*(.-)%s*$"))))
                 i = i + 1
@@ -333,7 +334,8 @@ function parser.parse(text)
 
         -- Horizontal Rule / Thematic Break
         local hr_stripped = line:gsub("%s", "")
-        if #hr_stripped >= 3 and (hr_stripped:match("^%-+$") or hr_stripped:match("^%*+$") or hr_stripped:match("^_+$")) then
+        local hr_leading = line:match("^(%s*)") or ""
+        if #hr_leading <= 3 and #hr_stripped >= 3 and (hr_stripped:match("^%-+$") or hr_stripped:match("^%*+$") or hr_stripped:match("^_+$")) then
             close_blocks()
             table.insert(html, "<hr />")
             goto continue
