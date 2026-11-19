@@ -100,4 +100,7 @@ assert_eq(parser.inline("*not bold*"), "<em>not bold</em>")
 assert_eq(parser.inline("**and**"), "<strong>and</strong>")
 assert_eq(parser.inline("~~not~~"), "<del>not</del>")
 
+assert_eq(parser.inline("\\a"), "\\a")
+assert_eq(parser.inline("a\r\nb"), "a\nb")
+
 print("all parser tests passed")

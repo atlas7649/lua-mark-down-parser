@@ -98,12 +98,13 @@ local function inline_render(text)
     res = table.concat(extracted)
 
     -- Handle escaping: \* -> *, \` -> `, \~ -> ~, etc.
+    -- Only ASCII punctuation characters are escapable.
     local escapes = {}
     local i = 1
     while i <= #res do
         if res:sub(i, i) == "\\" then
             local char = res:sub(i+1, i+1)
-            if char ~= "" and char ~= "\n" then
+            if char ~= "" and char ~= "\n" and char:match("^%p$") then
                 escapes[#escapes + 1] = char
                 local placeholder = "__ESC" .. #escapes .. "__"
                 res = res:sub(1, i-1) .. placeholder .. res:sub(i+2)
@@ -176,6 +177,8 @@ end
 function parser.inline(text)
     if text == nil then return "" end
     text = tostring(text)
+    text = text:gsub("\r\n", "\n")
+    text = text:gsub("\r", "\n")
     if text == "" then return "" end
     return inline_render(html_escape(text))
 end
