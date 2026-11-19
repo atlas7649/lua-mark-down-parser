@@ -12,6 +12,11 @@ local function html_escape(text)
 end
 
 local function is_table_separator(row_text)
+    local leading = row_text:match("^(%s*)") or ""
+    if #leading > 3 then
+        return false
+    end
+
     local row = row_text:match("^%s*(.-)%s*$")
     if not row or not row:match("^|") then
         return false
@@ -347,6 +352,10 @@ function parser.parse(text)
             local table_lines = {line}
             local j = i + 1
             while j <= #lines and lines[j]:match("^%s*|") do
+                local row_leading = lines[j]:match("^(%s*)") or ""
+                if #row_leading > 3 then
+                    break
+                end
                 table.insert(table_lines, lines[j])
                 j = j + 1
             end
