@@ -56,6 +56,7 @@ local function inline_render(text)
 
     -- Inline Code: extract code spans before backslash escaping and all other
     -- inline transformations. An escaped backtick is not a code delimiter.
+    -- A code span cannot cross a line boundary.
     local code_spans = {}
     local code_index = 0
     local extracted = {}
@@ -64,9 +65,11 @@ local function inline_render(text)
         if res:sub(i, i) == "`" and count_preceding_backslashes(res, i) % 2 == 0 then
             local closing = nil
             local search = i + 1
+            local newline_pos = res:find("\n", i, true)
+            local limit = newline_pos and (newline_pos - 1) or #res
             while true do
                 local pos = res:find("`", search, true)
-                if not pos then
+                if not pos or pos > limit then
                     break
                 end
                 if count_preceding_backslashes(res, pos) % 2 == 0 then
@@ -100,7 +103,7 @@ local function inline_render(text)
     while i <= #res do
         if res:sub(i, i) == "\\" then
             local char = res:sub(i+1, i+1)
-            if char ~= "" then
+            if char ~= "" and char ~= "\n" then
                 escapes[#escapes + 1] = char
                 local placeholder = "__ESC" .. #escapes .. "__"
                 res = res:sub(1, i-1) .. placeholder .. res:sub(i+2)
