@@ -321,7 +321,8 @@ function parser.parse(text)
         -- Setext-style Headers (Underlined)
         local setext_stripped = line:gsub("%s", "")
         local line_is_hr = #setext_stripped >= 3 and (setext_stripped:match("^%-+$") or setext_stripped:match("^%*+$") or setext_stripped:match("^_+$"))
-        if not line_is_hr and line:match("%S") and i < #lines then
+        local setext_leading = line:match("^(%s*)") or ""
+        if #setext_leading <= 3 and not line_is_hr and line:match("%S") and i < #lines then
             local next_line = lines[i+1]
             local next_leading = next_line and next_line:match("^(%s*)") or ""
             if #next_leading <= 3 and next_line and next_line:match("^%s*=+%s*$") then
@@ -347,7 +348,8 @@ function parser.parse(text)
         end
 
         -- Tables
-        if line:match("^%s*|") then
+        local table_leading = line:match("^(%s*)") or ""
+        if #table_leading <= 3 and line:match("^%s*|") then
             close_blocks()
             local table_lines = {line}
             local j = i + 1
@@ -408,7 +410,9 @@ function parser.parse(text)
         end
         local quote_prefix = line:sub(1, prefix_end - 1)
         local current_depth = select(2, quote_prefix:gsub(">", ""))
-        if current_depth > 0 then
+        local first_gt = line:find(">", 1, true)
+        local blockquote_allowed = first_gt ~= nil and first_gt <= 4
+        if blockquote_allowed and current_depth > 0 then
             if in_list or block_type then
                 close_code_and_list()
             end
@@ -428,8 +432,12 @@ function parser.parse(text)
         end
 
         -- Lists
-        local ul_match = line:match("^%s*-%s+(.-)$")
-        local ol_match = line:match("^%s*%d+%.%s+(.-)$")
+        local list_leading = line:match("^(%s*)") or ""
+        local ul_match, ol_match
+        if #list_leading <= 3 then
+            ul_match = line:match("^%s*-%s+(.-)$")
+            ol_match = line:match("^%s*%d+%.%s+(.-)$")
+        end
         if ul_match or ol_match then
             local current_type = ul_match and "ul" or "ol"
             local content = ul_match or ol_match
