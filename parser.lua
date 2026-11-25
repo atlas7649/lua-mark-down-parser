@@ -61,15 +61,22 @@ local function inline_render(text)
 
     -- Inline Code: extract code spans before backslash escaping and all other
     -- inline transformations. An escaped backtick is not a code delimiter.
-    -- A code span cannot cross a line boundary.
+    -- A code span cannot cross a line boundary. Runs of backticks delimit a
+    -- code span containing the same or fewer consecutive backticks.
     local code_spans = {}
     local code_index = 0
     local extracted = {}
     local i = 1
     while i <= #res do
         if res:sub(i, i) == "`" and count_preceding_backslashes(res, i) % 2 == 0 then
-            local closing = nil
-            local search = i + 1
+            local open_len = 0
+            while i + open_len <= #res and res:sub(i + open_len, i + open_len) == "`" do
+                open_len = open_len + 1
+            end
+
+            local closing_start = nil
+            local closing_len = 0
+            local search = i + open_len
             local newline_pos = res:find("\n", i, true)
             local limit = newline_pos and (newline_pos - 1) or #res
             while true do
@@ -78,19 +85,28 @@ local function inline_render(text)
                     break
                 end
                 if count_preceding_backslashes(res, pos) % 2 == 0 then
-                    closing = pos
-                    break
+                    local run = 0
+                    while pos + run <= limit and res:sub(pos + run, pos + run) == "`" do
+                        run = run + 1
+                    end
+                    if run >= open_len then
+                        closing_start = pos
+                        closing_len = run
+                        break
+                    end
+                    search = pos + run
                 else
                     search = pos + 1
                 end
             end
-            if closing then
+
+            if closing_start then
                 code_index = code_index + 1
-                local code = res:sub(i + 1, closing - 1)
+                local code = res:sub(i + open_len, closing_start - 1)
                 local token = "__CODE" .. code_index .. "__"
                 code_spans[token] = "<code style='white-space: pre;'>" .. code .. "</code>"
                 extracted[#extracted + 1] = token
-                i = closing + 1
+                i = closing_start + closing_len
             else
                 extracted[#extracted + 1] = res:sub(i, i)
                 i = i + 1
