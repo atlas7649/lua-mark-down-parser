@@ -105,4 +105,7 @@ assert_eq(parser.inline("~~not~~"), "<del>not</del>")
 assert_eq(parser.inline("\\a"), "\\a")
 assert_eq(parser.inline("a\r\nb"), "a\nb")
 
+assert_eq(parser.inline("``a`"), "``a`")
+assert_eq(parser.inline("```"), "```")
+
 print("all parser tests passed")

@@ -108,8 +108,10 @@ local function inline_render(text)
                 extracted[#extracted + 1] = token
                 i = closing_start + closing_len
             else
-                extracted[#extracted + 1] = res:sub(i, i)
-                i = i + 1
+                -- No matching closing run: keep the whole opening run literal so
+                -- its backticks cannot accidentally open a shorter code span.
+                extracted[#extracted + 1] = res:sub(i, i + open_len - 1)
+                i = i + open_len
             end
         else
             extracted[#extracted + 1] = res:sub(i, i)
